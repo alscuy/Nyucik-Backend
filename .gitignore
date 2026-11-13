@@ -23,3 +23,6 @@ Thumbs.db
 
 # Upload lokal (gambar disimpan di Cloudinary)
 uploads/
+
+# Sertifikat SSL Aiven (didownload lokal)
+ca.pem
