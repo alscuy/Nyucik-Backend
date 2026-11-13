@@ -9,12 +9,13 @@ const run = async () => {
   const schemaPath = path.join(__dirname, "..", "db", "schema.sql");
   const sql = fs.readFileSync(schemaPath, "utf-8");
 
+  // Connect TANPA memilih database dulu, karena schema.sql
+  // berisi CREATE DATABASE IF NOT EXISTS nyucik_db + USE nyucik_db
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT) || 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
     ssl:
       process.env.DB_SSL === "true"
         ? { rejectUnauthorized: false }
@@ -24,7 +25,7 @@ const run = async () => {
 
   try {
     await conn.query(sql);
-    console.log("✅ Migrasi selesai: semua tabel berhasil dibuat (nyucik)");
+    console.log("✅ Migrasi selesai: database nyucik_db & semua tabel berhasil dibuat");
   } catch (err) {
     console.error("❌ Migrasi gagal:", err);
     process.exitCode = 1;
