@@ -214,7 +214,7 @@ Semua request pakai header `Content-Type: application/json`, **kecuali** yang ad
 ```json
 { "success": true, "message": "Verifikasi berhasil! Akun kamu aktif, silakan login.", "data": { "email": "budi@mail.com" } }
 ```
-❌ Kalau OTP salah → `400 Kode OTP salah`. ❌ Kalau lewat 5 menit → `410 OTP sudah kedaluwarsa`.
+❌ Kalau OTP salah → `400 Kode OTP salah`. ❌ Kalau lewat 5 menit → `410 OTP sudah kedaluwarsa` → request ulang via `/auth/resend-otp` (jeda 5 menit antar kirim).
 
 #### **TEST 3 — Login**
 `POST {{base_url}}/auth/login`
