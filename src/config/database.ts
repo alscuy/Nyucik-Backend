@@ -19,6 +19,10 @@ export const pool = mysql.createPool({
   queueLimit: 0,
   ssl: sslConfig,
   decimalNumbers: true,
+  // Semua DATE/DATETIME/TIME keluar sebagai string & ditulis pakai zona WIB
+  // (MySQL Aiven pakai UTC, jadi dipaksa +07:00 biar gak selisih 7 jam)
+  dateStrings: true,
+  timezone: "+07:00",
 });
 
 export const testConnection = async () => {
@@ -46,6 +50,16 @@ export const queryOne = async (
   const rows = await query(sql, params);
   return rows.length > 0 ? rows[0] : null;
 };
+
+/** Ubah string DATETIME MySQL ("2026-11-13 21:40:00") jadi Date zona WIB */
+export const parseWib = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  return new Date(`${String(value).replace(" ", "T")}+07:00`);
+};
+
+/** Tanggal hari ini versi WIB, format YYYY-MM-DD */
+export const todayWib = (): string =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
 
 /** Database transaction: rollback otomatis kalau ada error */
 export const withTransaction = async <T>(
