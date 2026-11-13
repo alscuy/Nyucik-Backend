@@ -15,46 +15,12 @@ VALUES
   ('Budi User',     'user@nyucik.com',  '081200000002', '$2a$10$maaPb2iVyQpll5f2cGqQwu5s7H2wb0X6cKMgeg8BzOvpwp9Qo9lG2', 'USER',  1, 100000.00)
 ON DUPLICATE KEY UPDATE email = VALUES(email);
 
--- WASHING MACHINES (A1-A5: 10kg max Rp1.500/kg | A6-A10: 15kg max Rp1.000/kg)
-INSERT INTO washing_machines (code, capacity_kg, price_per_kg, status, description)
-VALUES
-  ('A1', 10, 1500, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 10 kg'),
-  ('A2', 10, 1500, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 10 kg'),
-  ('A3', 10, 1500, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 10 kg'),
-  ('A4', 10, 1500, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 10 kg'),
-  ('A5', 10, 1500, 'MAINTENANCE', 'Mesin cuci kapasitas maksimal 10 kg - sedang perbaikan'),
-  ('A6', 15, 1000, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 15 kg'),
-  ('A7', 15, 1000, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 15 kg'),
-  ('A8', 15, 1000, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 15 kg'),
-  ('A9', 15, 1000, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 15 kg'),
-  ('A10', 15, 1000, 'AVAILABLE', 'Mesin cuci kapasitas maksimal 15 kg')
-ON DUPLICATE KEY UPDATE code = VALUES(code);
-
--- DRYING MACHINES (B1-B10)
-INSERT INTO drying_machines (code, price_per_use, duration_minutes, status, description)
-VALUES
-  ('B1', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B2', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B3', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B4', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B5', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B6', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B7', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B8', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B9', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit'),
-  ('B10', 3000, 60, 'AVAILABLE', 'Mesin pengering 60 menit')
-ON DUPLICATE KEY UPDATE code = VALUES(code);
-
--- PRODUCTS
-INSERT INTO products (name, description, price, stock, is_active)
-VALUES
-  ('Deterjen Bubuk 500gr', 'Deterjen bubuk berkualitas untuk cuci mesin', 12000, 50, 1),
-  ('Deterjen Cair 800ml', 'Deterjen cair antar jamur, wangi tahan lama', 18000, 40, 1),
-  ('Pewangi Pakaian 500ml', 'Pewangi pakaian, bikin baju wangi seharian', 15000, 30, 1),
-  ('Pelembut Pakaian 750ml', 'Softener bikin pakaian lembut dan tidak kasar', 16000, 35, 1),
-  ('Sabun Cuci Tangan 250ml', 'Sabun cuci tangan untuk di laundry', 8000, 60, 1),
-  ('Kantong Laundry Besar', 'Kantong untuk membawa cucian', 5000, 100, 1)
-ON DUPLICATE KEY UPDATE name = VALUES(name);
+-- WASHING MACHINES, DRYING MACHINES & PRODUCTS
+-- (sengaja kosong: data mesin & produk ditambahkan sendiri lewat dashboard admin)
+--   Mesin cuci    : POST /api/v1/machines/washing-machines  (admin)
+--   Mesin pengering: POST /api/v1/machines/drying-machines  (admin)
+--   Produk        : POST /api/v1/products                   (admin)
+-- Harga rekomendasi: mesin 10kg -> Rp1.500/kg | mesin 15kg -> Rp1.000/kg
 
 -- ANNOUNCEMENTS
 INSERT INTO announcements (title, content, start_date, end_date, is_active)
