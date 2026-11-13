@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { pool, queryOne } from "../config/database";
+import { pool, queryOne, parseWib } from "../config/database";
 import { signToken } from "../utils/jwt.util";
 import { sendOTPEmail } from "../utils/mailer";
 import { success, fail } from "../utils/response";
@@ -19,10 +19,12 @@ const generateOTP = (): string =>
 const createAndSendOtp = async (userId: number, email: string) => {
   const otp = generateOTP();
   const otpHash = await bcrypt.hash(otp, 10);
+  // Expiry dihitung di Node (WIB), bukan NOW() MySQL (UTC) — biar gak selisih 7 jam
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
   await pool.query(
-    `UPDATE users SET otp_hash = ?, otp_expires_at = DATE_ADD(NOW(), INTERVAL 5 MINUTE),
-     otp_attempts = 0, otp_resend_count = 0, otp_last_sent_at = NOW() WHERE id = ?`,
-    [otpHash, userId]
+    `UPDATE users SET otp_hash = ?, otp_expires_at = ?,
+     otp_attempts = 0, otp_last_sent_at = ? WHERE id = ?`,
+    [otpHash, expiresAt, new Date(), userId]
   );
   await sendOTPEmail(email, otp);
   return otp;
@@ -89,7 +91,8 @@ export const verifyOtp = async (req: Request, res: Response) => {
     if (user.is_verified) return fail(res, "Akun sudah terverifikasi, silakan login", 409);
     if (!user.otp_hash) return fail(res, "Tidak ada OTP aktif, silakan kirim ulang OTP", 400);
 
-    if (new Date(user.otp_expires_at) < new Date()) {
+    const expiresAt = parseWib(user.otp_expires_at);
+    if (!expiresAt || expiresAt < new Date()) {
       return fail(res, "OTP sudah kedaluwarsa, silakan request OTP baru", 410);
     }
 
@@ -123,6 +126,15 @@ export const verifyOtp = async (req: Request, res: Response) => {
 /** POST /api/v1/auth/resend-otp */
 export const resendOtp = async (req: Request, res: Response) => {
   try {
+    // Kalau user ngirim otp ke endpoint ini, arahkan ke endpoint yang benar
+    if (req.body?.otp) {
+      return fail(
+        res,
+        "Endpoint ini hanya untuk kirim ulang OTP. Verifikasi kode pakai POST /api/v1/auth/verify-otp",
+        400
+      );
+    }
+
     const { email } = req.body;
     if (!email) return fail(res, "Email wajib diisi", 400);
 
@@ -135,9 +147,9 @@ export const resendOtp = async (req: Request, res: Response) => {
 
     // Jeda kirim OTP: sekali kirim, harus tunggu 5 menit untuk kirim lagi
     if (user.otp_last_sent_at) {
-      const elapsed = Date.now() - new Date(user.otp_last_sent_at).getTime();
-      if (elapsed < 5 * 60 * 1000) {
-        const sisa = Math.ceil((5 * 60 * 1000 - elapsed) / 60000);
+      const last = parseWib(user.otp_last_sent_at);
+      if (last && Date.now() - last.getTime() < 5 * 60 * 1000) {
+        const sisa = Math.ceil((5 * 60 * 1000 - (Date.now() - last.getTime())) / 60000);
         return fail(res, `Tunggu ${sisa} menit lagi sebelum meminta OTP baru`, 429);
       }
     }
