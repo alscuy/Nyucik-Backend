@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { pool, query, queryOne } from "../config/database";
+import { pool, query, queryOne, todayWib } from "../config/database";
 import { success, fail } from "../utils/response";
 import { notFound } from "../utils/httpError";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
@@ -11,8 +11,9 @@ export const listAnnouncements = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     `SELECT id, title, content, image_url, start_date, end_date, is_active, created_at
      FROM announcements
-     WHERE is_active = 1 AND CURDATE() BETWEEN start_date AND end_date
-     ORDER BY start_date DESC`
+     WHERE is_active = 1 AND ? BETWEEN start_date AND end_date
+     ORDER BY start_date DESC`,
+    [todayWib()]
   );
   return success(res, rows, "Pengumuman berhasil diambil");
 };

@@ -57,9 +57,9 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     }
 
     // 4. Booking minimal 1 jam sebelum waktu penggunaan & tidak boleh di masa lalu
-    const bookingDateTime = new Date(`${dateStr}T${data.start_time}:00`);
-    const nowPlusOne = new Date(Date.now() + 60 * 60 * 1000);
-    if (bookingDateTime < nowPlusOne) {
+    // (pakai zona WIB eksplisit biar hasilnya sama di localhost maupun server)
+    const bookingDateTime = new Date(`${dateStr}T${data.start_time}:00+07:00`);
+    if (bookingDateTime.getTime() < Date.now() + 60 * 60 * 1000) {
       return badRequest("Booking harus dilakukan minimal 1 jam sebelum waktu penggunaan");
     }
 
@@ -212,11 +212,11 @@ export const cancelBooking = async (req: AuthRequest, res: Response) => {
     return fail(res, `Booking berstatus ${booking.status}, tidak bisa dibatalkan`, 409);
   }
 
-  // Cek waktu: minimal 1 jam sebelum jadwal
+  // Cek waktu: minimal 1 jam sebelum jadwal (booking_date & start_time berupa string dari MySQL)
   const startDateTime = new Date(
-    `${booking.booking_date.toISOString().slice(0, 10)}T${String(booking.start_time).slice(0, 5)}:00`
+    `${booking.booking_date}T${String(booking.start_time).slice(0, 5)}:00+07:00`
   );
-  if (startDateTime < new Date(Date.now() + 60 * 60 * 1000)) {
+  if (startDateTime.getTime() < Date.now() + 60 * 60 * 1000) {
     return badRequest("Pembatalan hanya bisa minimal 1 jam sebelum waktu penggunaan");
   }
 
