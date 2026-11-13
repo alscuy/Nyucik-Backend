@@ -127,27 +127,21 @@ export const resendOtp = async (req: Request, res: Response) => {
     if (!email) return fail(res, "Email wajib diisi", 400);
 
     const user = await queryOne(
-      "SELECT id, is_verified, otp_last_sent_at, otp_resend_count FROM users WHERE email = ?",
+      "SELECT id, is_verified, otp_last_sent_at FROM users WHERE email = ?",
       [email]
     );
     if (!user) return fail(res, "Email tidak terdaftar, silakan register", 404);
     if (user.is_verified) return fail(res, "Akun sudah terverifikasi, silakan login", 409);
 
-    // Batas resend: maksimal 1x per menit, maksimal 3x per jam
+    // Jeda kirim OTP: sekali kirim, harus tunggu 5 menit untuk kirim lagi
     if (user.otp_last_sent_at) {
-      const last = new Date(user.otp_last_sent_at).getTime();
-      if (Date.now() - last < 60 * 1000) {
-        return fail(res, "Tunggu 1 menit sebelum meminta OTP baru", 429);
-      }
-      if (user.otp_resend_count >= 3) {
-        return fail(res, "Batas request OTP (3x/jam) tercapai. Coba lagi nanti.", 429);
+      const elapsed = Date.now() - new Date(user.otp_last_sent_at).getTime();
+      if (elapsed < 5 * 60 * 1000) {
+        const sisa = Math.ceil((5 * 60 * 1000 - elapsed) / 60000);
+        return fail(res, `Tunggu ${sisa} menit lagi sebelum meminta OTP baru`, 429);
       }
     }
 
-    await pool.query(
-      "UPDATE users SET otp_resend_count = otp_resend_count + 1 WHERE id = ?",
-      [user.id]
-    );
     const otp = await createAndSendOtp(user.id, email);
 
     const response: any = { email, otp_expired_in: "5 menit" };
