@@ -9,12 +9,12 @@ const run = async () => {
   const seedPath = path.join(__dirname, "..", "db", "seed.sql");
   const sql = fs.readFileSync(seedPath, "utf-8");
 
+  // Connect TANPA memilih database dulu (seed.sql sudah berisi USE nyucik_db)
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT) || 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
     ssl:
       process.env.DB_SSL === "true"
         ? { rejectUnauthorized: false }

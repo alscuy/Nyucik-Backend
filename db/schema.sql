@@ -3,6 +3,15 @@
 -- Jalankan: npm run migrate
 -- ============================================================
 
+-- ============================================================
+-- NYUCIK - Self Service Laundry | MySQL Aiven Schema
+-- Jalankan: npm run migrate
+-- Database 'nyucik_db' dibuat otomatis jika belum ada
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS nyucik_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE nyucik_db;
+
 -- ---------------- USERS ----------------
 CREATE TABLE IF NOT EXISTS users (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
