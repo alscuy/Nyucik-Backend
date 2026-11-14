@@ -26,3 +26,5 @@ uploads/
 
 # Sertifikat SSL Aiven (didownload lokal)
 ca.pem
+.vercel
+.env*

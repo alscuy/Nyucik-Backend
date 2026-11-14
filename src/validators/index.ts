@@ -147,6 +147,21 @@ export const updateStatusSchema = z.object({
   }),
 });
 
+export const updateBookingSchema = z
+  .object({
+    booking_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal harus format YYYY-MM-DD")
+      .optional(),
+    start_time: z
+      .string()
+      .regex(/^\d{2}:\d{2}$/, "Jam harus format HH:MM (contoh 10:00)")
+      .optional(),
+  })
+  .refine((d) => d.booking_date !== undefined || d.start_time !== undefined, {
+    message: "Isi minimal salah satu: booking_date atau start_time",
+  });
+
 export const machineStatusSchema = z.object({
   status: z.enum(["AVAILABLE", "BOOKED", "IN_USE", "MAINTENANCE"], {
     message: "Status mesin tidak valid",
