@@ -36,5 +36,3 @@ export const requireAdmin = (
     return fail(res, "Endpoint ini khusus admin", 403);
   next();
 };
-
-export { success };
