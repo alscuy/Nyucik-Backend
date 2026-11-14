@@ -101,13 +101,12 @@ Base URL = alamat server backend. Ada 3 tempat:
 http://localhost:3000/api/v1
 ```
 
-### b) File `.env` backend (dipakai untuk response/link)
-Sudah ada di `.env`:
+### b) File `.env` backend
+Tidak butuh `FRONTEND_URL` — kode backend tidak memakainya.
+Yang jadi acuan frontend adalah base URL API:
 ```env
 PORT=3000
-FRONTEND_URL=http://localhost:5173
 ```
-Nanti kalau deploy, `FRONTEND_URL` diisi domain aplikasi Flutter/web kamu.
 
 ### c) Aplikasi Flutter (frontend)
 Simpan base URL di satu tempat, contoh `lib/config/api_config.dart`:
