@@ -2,7 +2,6 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -23,6 +22,9 @@ import adminRoute from "./routes/admin.route";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Export app agar bisa dipakai serverless (api/index.ts untuk Vercel)
+export default app;
+
 // ============ Middleware global ============
 app.use(helmet());
 
@@ -41,20 +43,11 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-// Rate limit global: max 300 request / 15 menit per IP
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 300,
-    message: { success: false, message: "Terlalu banyak request, coba lagi nanti" },
-  })
-);
-
 // ============ Routes ============
 app.get("/", (_req: Request, res: Response) => {
   res.json({
     success: true,
-    message: "API Nyucik - Self Service Laundry berjalan 🚀",
+    message: "API Nyucik - Self Service Laundry berjalan ",
     docs: "Lihat README.md untuk daftar endpoint",
     base_url: "/api/v1",
   });
@@ -79,9 +72,13 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => error
 const start = async () => {
   await testConnection();
   app.listen(PORT, () => {
-    console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
+    console.log(` Server berjalan di http://localhost:${PORT}`);
     console.log(`   Base URL API: /api/v1`);
   });
 };
 
-start();
+// Listen hanya saat dieksekusi langsung (npm run dev / npm start).
+// Di Vercel file ini di-import oleh api/index.ts (serverless) — JANGAN listen.
+if (require.main === module) {
+  start();
+}

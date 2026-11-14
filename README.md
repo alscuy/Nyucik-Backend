@@ -9,7 +9,7 @@ REST API backend untuk **Nyucik** — aplikasi self-service laundry (booking mes
 - JWT (1 token, expired 1d), Bcrypt, OTP email via Nodemailer
 - Cloudinary (foto booking sebelum/sampai, mesin, produk, pengumuman, profil)
 - DANA QRIS Acquirer MPM (webhook + idempotency)
-- Zod (validasi), Helmet, CORS, Rate Limiting, Swagger (dokumentasi & testing)
+- Zod (validasi), Helmet, CORS, Rate Limiting
 
 ## Struktur Branch
 
@@ -34,6 +34,12 @@ npm run dev
 | ADMIN | admin@nyucik.com  | admin123  |
 | USER  | user@nyucik.com   | user123   |
 
-## Dokumentasi API
+## Testing API
 
-Swagger UI: `http://localhost:3000/api/docs` — prefix semua endpoint: `/api/v1`
+Test pakai **Postman** (backend) & **Flutter** (mobile) — panduan lengkap ada di folder `docs/`:
+
+- `docs/PANDUAN.md` — setup DB Aiven, environment Postman, alur testing
+- `docs/admin-postman.md` — endpoint ADMIN
+- `docs/users-postman.md` — endpoint USER
+
+Base URL: `http://localhost:3000/api/v1`

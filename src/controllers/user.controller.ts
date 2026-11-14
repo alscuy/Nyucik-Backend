@@ -5,6 +5,7 @@ import { success, fail } from "../utils/response";
 import { badRequest, notFound } from "../utils/httpError";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { updateProfileSchema, changePasswordSchema } from "../validators";
+import { autoExpireBooking } from "./booking.controller";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
 /** GET /api/v1/users/me */
@@ -121,5 +122,8 @@ export const myBookings = async (req: AuthRequest, res: Response) => {
     [req.user!.id]
   );
   rows.forEach((r: any) => { r.total_price = Number(r.total_price); r.weight_kg = r.weight_kg ? Number(r.weight_kg) : null; });
+  for (const r of rows as any[]) {
+    if (await autoExpireBooking(r)) r.status = "CANCELLED";
+  }
   return success(res, rows, "Riwayat booking berhasil diambil");
 };
