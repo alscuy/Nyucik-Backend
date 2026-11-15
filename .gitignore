@@ -24,6 +24,9 @@ Thumbs.db
 # Upload lokal (gambar disimpan di Cloudinary)
 uploads/
 
+# Gambar QRIS statis merchant (jangan commit!)
+image/
+
 # Sertifikat SSL Aiven (didownload lokal)
 ca.pem
 .vercel

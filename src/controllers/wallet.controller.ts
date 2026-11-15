@@ -53,6 +53,7 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
         reference,
         amount,
         qris: qris.qr_string,
+        qr_image: qris.qr_image,
         sandbox: qris.sandbox,
         dana_note: qris.message,
         status: "PENDING",
@@ -60,7 +61,9 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
       },
       isDanaConfigured()
         ? "QRIS DANA berhasil dibuat, silakan bayar"
-        : "QRIS dibuat dalam mode sandbox (kredensial DANA belum diisi)",
+        : qris.sandbox
+        ? "QRIS dibuat dalam mode sandbox (kredensial DANA & QRIS statis belum diisi)"
+        : "QRIS dinamis berhasil dibuat dari QRIS statis merchant, silakan bayar",
       201
     );
   } catch (err: any) {
