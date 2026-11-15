@@ -28,3 +28,6 @@ uploads/
 ca.pem
 .vercel
 .env*
+
+# Dokumentasi lokal (ga ikut commit)
+docs/
