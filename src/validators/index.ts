@@ -67,7 +67,6 @@ export const washingMachineSchema = z.object({
 export const dryingMachineSchema = z.object({
   code: z.string().min(1, "Kode mesin wajib diisi"),
   price_per_use: z.coerce.number().positive("Harga per pakai wajib diisi"),
-  duration_minutes: z.coerce.number().int().positive("Durasi wajib diisi"),
   status: z
     .enum(["AVAILABLE", "BOOKED", "IN_USE", "MAINTENANCE"])
     .optional()
@@ -139,6 +138,15 @@ export const employeeSchema = z.object({
   position: z.string().min(3, "Posisi wajib diisi"),
   phone: z.string().optional(),
   is_ready: booleanField.optional().default(true),
+});
+
+export const expenseSchema = z.object({
+  title: z.string().min(3, "Keterangan pengeluaran minimal 3 karakter"),
+  amount: z.coerce.number().positive("Nominal wajib diisi"),
+  expense_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal harus format YYYY-MM-DD"),
+  description: z.string().optional(),
 });
 
 export const updateStatusSchema = z.object({

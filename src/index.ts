@@ -17,6 +17,7 @@ import bookingRoute from "./routes/booking.route";
 import productRoute from "./routes/product.route";
 import announcementRoute from "./routes/announcement.route";
 import employeeRoute from "./routes/employee.route";
+import expenseRoute from "./routes/expense.route";
 import adminRoute from "./routes/admin.route";
 
 const app = express();
@@ -62,6 +63,7 @@ app.use("/api/v1/bookings", bookingRoute);
 app.use("/api/v1/products", productRoute);
 app.use("/api/v1/announcements", announcementRoute);
 app.use("/api/v1/employees", employeeRoute);
+app.use("/api/v1/expenses", expenseRoute);
 app.use("/api/v1/admin", adminRoute);
 
 // ============ Error handling ============

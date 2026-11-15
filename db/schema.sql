@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS drying_machines (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   code             VARCHAR(10) NOT NULL UNIQUE,
   price_per_use    DECIMAL(10,2) NOT NULL,
-  duration_minutes INT NOT NULL,
+  duration_minutes INT NOT NULL DEFAULT 25,
   status           ENUM('AVAILABLE','BOOKED','IN_USE','MAINTENANCE') NOT NULL DEFAULT 'AVAILABLE',
   description      TEXT NULL,
   photo_url        VARCHAR(500) NULL,
@@ -137,6 +137,17 @@ CREATE TABLE IF NOT EXISTS employees (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- ---------------- EXPENSES (pengeluaran operasional) ----------------
+CREATE TABLE IF NOT EXISTS expenses (
+  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title        VARCHAR(150) NOT NULL,
+  amount       DECIMAL(14,2) NOT NULL,
+  expense_date DATE NOT NULL,
+  description  TEXT NULL,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- ---------------- WALLET TRANSACTIONS ----------------
 CREATE TABLE IF NOT EXISTS wallet_transactions (

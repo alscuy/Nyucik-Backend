@@ -13,6 +13,11 @@ export const dashboard = async (_req: AuthRequest, res: Response) => {
   const [bookingsToday]: any[] = await query("SELECT COUNT(*) AS total FROM bookings WHERE booking_date = ? AND status <> 'CANCELLED'", [today]);
   const [revenueBooking]: any[] = await query("SELECT COALESCE(SUM(total_price), 0) AS total FROM bookings WHERE status IN ('CONFIRMED','IN_PROGRESS','COMPLETED')");
   const [revenueProduct]: any[] = await query("SELECT COALESCE(SUM(total_price), 0) AS total FROM product_orders");
+  const [expenses]: any[] = await query("SELECT COALESCE(SUM(amount), 0) AS total FROM expenses");
+
+  const booking = Number(revenueBooking.total);
+  const product = Number(revenueProduct.total);
+  const totalExpenses = Number(expenses.total);
 
   return success(res, {
     total_users: Number(users.total),
@@ -20,9 +25,11 @@ export const dashboard = async (_req: AuthRequest, res: Response) => {
     drying_machines_available: Number(dryersAvail.total),
     bookings_today: Number(bookingsToday.total),
     revenue: {
-      booking: Number(revenueBooking.total),
-      product: Number(revenueProduct.total),
-      total: Number(revenueBooking.total) + Number(revenueProduct.total),
+      booking,
+      product,
+      total: booking + product,
+      expenses: totalExpenses,
+      net: booking + product - totalExpenses,
     },
   }, "Dashboard berhasil diambil");
 };

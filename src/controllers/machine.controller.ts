@@ -161,8 +161,8 @@ export const createDryingMachine = async (req: AuthRequest, res: Response) => {
 
     const result: any = await pool.query(
       `INSERT INTO drying_machines (code, price_per_use, duration_minutes, status, description, photo_url)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [data.code, data.price_per_use, data.duration_minutes, data.status, data.description, photoUrl]
+       VALUES (?, ?, 25, ?, ?, ?)`,
+      [data.code, data.price_per_use, data.status, data.description, photoUrl]
     );
     const machine: any = await queryOne("SELECT * FROM drying_machines WHERE id = ?", [result[0].insertId]);
     machine.price_per_use = Number(machine.price_per_use);

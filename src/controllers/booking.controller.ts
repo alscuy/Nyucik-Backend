@@ -6,7 +6,7 @@ import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { createBookingSchema, updateStatusSchema, updateBookingSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
-const WASH_DURATION_MINUTES = 25; // durasi pencucian 25 menit
+const DURATION_MINUTES = 25; // durasi slot (cuci & kering) sama: 25 menit
 const OPEN_HOUR = 10;             // jam operasional mulai 10.00
 const CLOSE_HOUR = 15;            // jam operasional sampai 15.00
 const CANCEL_BEFORE_MINUTES = 30; // batal boleh sampai H-30 menit sebelum jadwal
@@ -89,8 +89,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     // 3. Validasi tanggal & jam operasional (10.00 - 15.00)
     const dateStr = data.booking_date;
     const startMin = toMinutes(data.start_time);
-    const duration =
-      data.machine_type === "WASHING" ? WASH_DURATION_MINUTES : machine.duration_minutes;
+    const duration = DURATION_MINUTES;
     const endMin = startMin + duration;
 
     if (startMin < OPEN_HOUR * 60 || endMin > CLOSE_HOUR * 60) {
@@ -430,7 +429,7 @@ export const updateBooking = async (req: AuthRequest, res: Response) => {
       [booking[col]]
     );
     if (!machine) return notFound("Mesin dari booking ini tidak ditemukan");
-    const dur = booking.machine_type === "WASHING" ? WASH_DURATION_MINUTES : machine.duration_minutes;
+    const dur = DURATION_MINUTES;
     const newEndMin = startMin + dur;
     if (startMin < OPEN_HOUR * 60 || newEndMin > CLOSE_HOUR * 60) {
       return badRequest("Jam operasional hanya pukul 10.00 - 15.00");
