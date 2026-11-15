@@ -3,7 +3,7 @@ import { Response } from "express";
 import { pool, query, queryOne, withTransaction } from "../config/database";
 import { success, fail } from "../utils/response";
 import { badRequest } from "../utils/httpError";
-import { createQris, isDanaConfigured } from "../utils/dana.util";
+import { createQris } from "../utils/dana.util";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
 /** GET /api/v1/wallet/balance */
@@ -59,11 +59,7 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
         status: "PENDING",
         note: "Saldo akan bertambah otomatis setelah webhook pembayaran valid diterima.",
       },
-      isDanaConfigured()
-        ? "QRIS DANA berhasil dibuat, silakan bayar"
-        : qris.sandbox
-        ? "QRIS dibuat dalam mode sandbox (kredensial DANA & QRIS statis belum diisi)"
-        : "QRIS dinamis berhasil dibuat dari QRIS statis merchant, silakan bayar",
+      qris.qr_image ? "QRIS dinamis berhasil dibuat dari QRIS statis merchant, silakan bayar" : "QRIS dibuat dalam mode sandbox (QRIS_STATIC_PAYLOAD belum diisi)",
       201
     );
   } catch (err: any) {
