@@ -4,6 +4,7 @@ import {
   getProduct,
   purchaseProduct,
   myOrders,
+  completeOrder,
   listAllProducts,
   createProduct,
   updateProduct,
@@ -20,6 +21,7 @@ router.get("/", authenticate, listProducts);
 router.get("/:id", authenticate, getProduct);
 router.post("/orders", authenticate, purchaseProduct);   // beli produk pakai saldo
 router.get("/orders/my", authenticate, myOrders);
+router.post("/orders/:id/complete", authenticate, completeOrder); // konfirmasi barang diterima
 
 // ==================== ADMIN ====================
 router.get("/admin/all", adminOnly, listAllProducts);

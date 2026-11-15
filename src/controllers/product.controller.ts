@@ -69,10 +69,10 @@ export const purchaseProduct = async (req: AuthRequest, res: Response) => {
         [req.user!.id, totalPrice, before, after, orderResult.insertId, `Beli ${product.name} x${data.quantity}`]
       );
 
-      return { order_id: orderResult.insertId, product: product.name, quantity: data.quantity, total_price: totalPrice, balance_after: after };
+      return { order_id: orderResult.insertId, product: product.name, quantity: data.quantity, total_price: totalPrice, status: "PENDING", balance_after: after };
     });
 
-    return success(res, order, "Pembelian berhasil, stok berkurang otomatis", 201);
+    return success(res, order, "Pembelian berhasil, silakan tunjukkan ke petugas", 201);
   } catch (err: any) {
     if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
     if (typeof err.status === "number") return fail(res, err.message, err.status);
@@ -84,13 +84,34 @@ export const purchaseProduct = async (req: AuthRequest, res: Response) => {
 /** GET /api/v1/products/orders/my - riwayat pembelian */
 export const myOrders = async (req: AuthRequest, res: Response) => {
   const rows = await query(
-    `SELECT po.id, p.name AS product_name, p.photo_url, po.quantity, po.total_price, po.created_at
+    `SELECT po.id, po.product_id, p.name AS product_name, p.photo_url,
+            po.quantity, po.total_price, po.status, po.created_at
      FROM product_orders po JOIN products p ON p.id = po.product_id
      WHERE po.user_id = ? ORDER BY po.created_at DESC`,
     [req.user!.id]
   );
   rows.forEach((r: any) => { r.total_price = Number(r.total_price); });
   return success(res, rows, "Riwayat pembelian berhasil diambil");
+};
+
+/**
+ * POST /api/v1/products/orders/:id/complete - konfirmasi produk sudah diterima.
+ * Alur: beli (status PENDING) -> petugas serahkan barang -> user konfirmasi -> COMPLETED.
+ */
+export const completeOrder = async (req: AuthRequest, res: Response) => {
+  const order: any = await queryOne(
+    "SELECT * FROM product_orders WHERE id = ? AND user_id = ?",
+    [req.params.id, req.user!.id]
+  );
+  if (!order) return notFound("Pesanan tidak ditemukan");
+  if (order.status === "COMPLETED") {
+    return fail(res, "Pesanan ini sudah dikonfirmasi sebelumnya", 409);
+  }
+  await pool.query(
+    "UPDATE product_orders SET status = 'COMPLETED' WHERE id = ?",
+    [req.params.id]
+  );
+  return success(res, { id: Number(req.params.id), status: "COMPLETED" }, "Pesanan dikonfirmasi selesai. Terima kasih!");
 };
 
 // ==================== ADMIN ====================

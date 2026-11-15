@@ -100,8 +100,8 @@ export const myTransactions = async (req: AuthRequest, res: Response) => {
     [req.user!.id]
   );
   const orders = await query(
-    `SELECT po.id, 'PRODUCT' AS type, p.name AS product_name, po.quantity,
-            po.total_price, po.created_at
+    `SELECT po.id, 'PRODUCT' AS type, po.product_id, po.quantity,
+            po.total_price, po.status, po.created_at, p.name AS product_name, p.photo_url
      FROM product_orders po JOIN products p ON p.id = po.product_id
      WHERE po.user_id = ? ORDER BY po.created_at DESC`,
     [req.user!.id]
