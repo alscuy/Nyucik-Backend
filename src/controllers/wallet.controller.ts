@@ -3,7 +3,7 @@ import { Response } from "express";
 import { pool, query, queryOne, withTransaction } from "../config/database";
 import { success, fail } from "../utils/response";
 import { badRequest } from "../utils/httpError";
-import { createQris } from "../utils/dana.util";
+import { createQris, verifyWebhookSignature } from "../utils/dana.util";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
 /** GET /api/v1/wallet/balance */
@@ -98,7 +98,6 @@ export const getTopUpDetail = async (req: AuthRequest, res: Response) => {
  */
 export const danaWebhook = async (req: any, res: Response) => {
   try {
-    const { verifyWebhookSignature } = await import("../utils/dana.util");
     const signature = (req.headers["x-signature"] as string) || "";
     const rawBody = req.rawBody || JSON.stringify(req.body);
 

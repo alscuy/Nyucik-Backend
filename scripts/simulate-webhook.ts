@@ -35,11 +35,14 @@ const payload = JSON.stringify({
 
 const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
 
-const res = await fetch(`${baseUrl}/api/v1/payments/webhook`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json", "X-Signature": signature },
-  body: payload,
-});
+const send = async () => {
+  const res = await fetch(`${baseUrl}/api/v1/payments/webhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Signature": signature },
+    body: payload,
+  });
+  const body = await res.json().catch(() => null);
+  console.log(`HTTP ${res.status}`, JSON.stringify(body, null, 2));
+};
 
-const body = await res.json().catch(() => null);
-console.log(`HTTP ${res.status}`, JSON.stringify(body, null, 2));
+send();
