@@ -34,7 +34,6 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
     const amount = Number(req.body.amount);
     if (!amount || isNaN(amount)) return badRequest("Nominal top up wajib diisi");
     if (amount < 10000) return badRequest("Minimal top up Rp10.000");
-    if (amount > 2000000) return badRequest("Maksimal top up Rp2.000.000");
 
     const reference = "TOPUP-" + crypto.randomUUID().replace(/-/g, "").slice(0, 20).toUpperCase();
 

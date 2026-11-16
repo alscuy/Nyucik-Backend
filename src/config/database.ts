@@ -15,7 +15,9 @@ export const pool = mysql.createPool({
   database: process.env.DB_NAME,
   port: Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
-  connectionLimit: 10,
+  // Di serverless (Vercel) tiap instance punya pool sendiri — kecilkan via
+  // DB_POOL_LIMIT=1..3 di env supaya tidak menghabiskan kuota koneksi MySQL.
+  connectionLimit: Number(process.env.DB_POOL_LIMIT) || 10,
   queueLimit: 0,
   ssl: sslConfig,
   decimalNumbers: true,
