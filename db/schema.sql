@@ -88,6 +88,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   photo_before_url   VARCHAR(500) NULL,
   photo_arrived_url  VARCHAR(500) NULL,
   paid_at            DATETIME NULL,
+  started_at         DATETIME NULL,
+  finished_at        DATETIME NULL,
   created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

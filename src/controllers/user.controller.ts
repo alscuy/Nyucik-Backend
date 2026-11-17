@@ -6,6 +6,7 @@ import { badRequest, notFound } from "../utils/httpError";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { updateProfileSchema, changePasswordSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
+import { finishDueLaundry } from "../services/booking.service";
 
 export const getProfile = async (req: AuthRequest, res: Response) => {
   const u: any = await queryOne(
@@ -44,7 +45,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (data.phone) { fields.push("phone = ?"); values.push(data.phone); }
     if (photoUrl) { fields.push("photo_url = ?"); values.push(photoUrl); }
 
-    if (fields.length === 0) return badRequest("Tidak ada data yang diubah");
+    if (fields.length === 0) return fail(res, "Tidak ada data yang diubah", 400);
 
     values.push(req.user!.id);
     await pool.query(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`, values);
@@ -87,12 +88,18 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 };
 
 export const myTransactions = async (req: AuthRequest, res: Response) => {
+  await finishDueLaundry();
   const bookings = await query(
-    `SELECT b.id, 'BOOKING' AS type, b.machine_type, b.booking_date, b.start_time,
-            b.total_price, b.status, b.created_at
-     FROM bookings b WHERE b.user_id = ? ORDER BY b.created_at DESC`,
+    `SELECT b.*, w.code AS washing_code, d.code AS drying_code
+     FROM bookings b
+     LEFT JOIN washing_machines w ON w.id = b.washing_machine_id
+     LEFT JOIN drying_machines d ON d.id = b.drying_machine_id
+     WHERE b.user_id = ? ORDER BY b.created_at DESC`,
     [req.user!.id]
   );
+  bookings.forEach((b: any) => {
+    b.total_price = Number(b.total_price);
+  });
   const orders = await query(
     `SELECT po.id, 'PRODUCT' AS type, po.product_id, po.quantity,
             po.total_price, po.status, po.created_at, p.name AS product_name, p.photo_url
@@ -105,6 +112,7 @@ export const myTransactions = async (req: AuthRequest, res: Response) => {
 };
 
 export const myBookings = async (req: AuthRequest, res: Response) => {
+  await finishDueLaundry();
   const rows = await query(
     `SELECT b.*, w.code AS washing_code, d.code AS drying_code
      FROM bookings b
@@ -115,5 +123,5 @@ export const myBookings = async (req: AuthRequest, res: Response) => {
     [req.user!.id]
   );
   rows.forEach((r: any) => { r.total_price = Number(r.total_price); });
-  return success(res, rows, "Riwayat booking berhasil diambil");
+  return success(res, rows, "Riwayat laundry berhasil diambil");
 };

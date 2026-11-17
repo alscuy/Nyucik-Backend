@@ -5,7 +5,7 @@ import {
   resendOtp,
   login,
   logout,
-} from "../controllers/auth.controller";
+} from "../controllers/auth";
 import { authenticate } from "../middlewares/auth.middleware";
 
 const router = Router();
