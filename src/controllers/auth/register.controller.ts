@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { pool, queryOne } from "../../config/database";
 import { success, fail } from "../../utils/response";
-import { HttpError } from "../../utils/httpError";
+import { HttpError } from "../../utils/http-error";
 import { registerSchema } from "../../validators";
 import { createAndSendOtp } from "./otp.helper";
 

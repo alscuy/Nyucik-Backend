@@ -1,5 +1,5 @@
 import multer from "multer";
-import { HttpError } from "../utils/httpError";
+import { HttpError } from "../utils/http-error";
 
 const storage = multer.memoryStorage();
 

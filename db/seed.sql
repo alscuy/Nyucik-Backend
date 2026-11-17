@@ -21,7 +21,7 @@ ON DUPLICATE KEY UPDATE email = VALUES(email);
 --   Mesin cuci    : POST /api/v1/machines/washing-machines  (admin)
 --   Mesin pengering: POST /api/v1/machines/drying-machines  (admin)
 --   Produk        : POST /api/v1/products                   (admin)
--- Harga rekomendasi: mesin 10kg -> Rp1.500/kg | mesin 15kg -> Rp1.000/kg
+-- Harga rekomendasi (flat per pemakaian): 5kg -> Rp15.000 | 10kg -> Rp20.000 | 15kg -> Rp25.000
 
 -- ANNOUNCEMENTS
 INSERT INTO announcements (title, content, start_date, end_date, is_active)

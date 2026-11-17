@@ -26,7 +26,8 @@ export const acceptCashPayment = async (req: AuthRequest, res: Response) => {
   const booking: any = await queryOne("SELECT * FROM bookings WHERE id = ?", [req.params.id]);
   if (!booking) return fail(res, "Laundry tidak ditemukan", 404);
 
-  const col = booking.machine_type === "WASHING" ? "washing_machine_id" : "drying_machine_id";
+  const machineColumn =
+    booking.machine_type === "WASHING" ? "washing_machine_id" : "drying_machine_id";
   const machineTable = booking.machine_type === "WASHING" ? "washing_machines" : "drying_machines";
   const price = Number(booking.total_price);
 
@@ -48,7 +49,7 @@ export const acceptCashPayment = async (req: AuthRequest, res: Response) => {
         "UPDATE bookings SET status = 'CONFIRMED', paid_at = NOW() WHERE id = ?",
         [booking.id]
       );
-      await conn.query(`UPDATE ${machineTable} SET status = 'BOOKED' WHERE id = ?`, [booking[col]]);
+      await conn.query(`UPDATE ${machineTable} SET status = 'BOOKED' WHERE id = ?`, [booking[machineColumn]]);
       await conn.query(
         `INSERT INTO wallet_transactions
          (user_id, type, amount, balance_before, balance_after, reference_type, reference_id, description)

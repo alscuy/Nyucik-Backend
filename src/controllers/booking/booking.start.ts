@@ -21,7 +21,7 @@ export const startLaundry = async (req: AuthRequest, res: Response) => {
   }
   if (!req.file) return fail(res, "Foto wajib diupload (field: photo)", 400);
 
-  const image = await uploadImage(req.file.buffer, FOLDERS.bookingArrived);
+  const image = await uploadImage(req.file.buffer, FOLDERS.photoStart);
   const startTime = nowWibTime();
   const endTime = addMinutesToTime(startTime, DURATION_MINUTES);
   const { col, table } = machineInfo(booking);

@@ -33,7 +33,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 
     let photoBeforeUrl: string | null = null;
     if (req.file) {
-      photoBeforeUrl = (await uploadImage(req.file.buffer, FOLDERS.bookingBefore)).url;
+      photoBeforeUrl = (await uploadImage(req.file.buffer, FOLDERS.photoBefore)).url;
     } else if (data.machine_type === "WASHING") {
       return fail(res, "Foto cucian yang mau dicuci wajib diupload (field: photo)", 400);
     }

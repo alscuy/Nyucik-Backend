@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { pool, query, queryOne, todayWib } from "../config/database";
 import { success, fail } from "../utils/response";
-import { notFound } from "../utils/httpError";
+import { notFound } from "../utils/http-error";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { announcementSchemaBase, announcementSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";

@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { pool, query } from "../config/database";
 import { success, fail } from "../utils/response";
-import { notFound } from "../utils/httpError";
+import { notFound } from "../utils/http-error";
 import { expenseSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
 

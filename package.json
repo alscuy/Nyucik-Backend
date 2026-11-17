@@ -9,7 +9,6 @@
     "start": "node dist/index.js",
     "migrate": "ts-node scripts/migrate.ts",
     "seed": "ts-node scripts/seed.ts",
-    "simulate-webhook": "ts-node scripts/simulate-webhook.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -37,8 +36,6 @@
     "@types/node": "^22.9.0",
     "@types/nodemailer": "^8.0.2",
     "@types/qrcode": "^1.5.6",
-    "jpeg-js": "^0.4.4",
-    "jsqr": "^1.4.0",
     "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"

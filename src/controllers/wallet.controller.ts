@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { Response } from "express";
 import { pool, query, queryOne, withTransaction } from "../config/database";
 import { success, fail } from "../utils/response";
-import { badRequest } from "../utils/httpError";
+import { badRequest } from "../utils/http-error";
 import { createQris } from "../utils/dana.util";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { AuthRequest } from "../middlewares/auth.middleware";
@@ -98,7 +98,7 @@ export const uploadTopUpProof = async (req: AuthRequest, res: Response) => {
     }
     if (!req.file) return badRequest("Foto bukti wajib diupload (field: photo)");
 
-    const img = await uploadImage(req.file.buffer, FOLDERS.topups);
+    const img = await uploadImage(req.file.buffer, FOLDERS.topUps);
     await pool.query(
       "UPDATE top_ups SET proof_url = ?, status = 'WAITING_CONFIRM', admin_note = NULL WHERE id = ?",
       [img.url, topup.id]

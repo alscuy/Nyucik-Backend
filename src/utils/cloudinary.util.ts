@@ -16,11 +16,11 @@ export const uploadImage = (
   });
 
 export const FOLDERS = {
-  bookingBefore: "nyucik/bookings/before",
-  bookingArrived: "nyucik/bookings/arrived",
+  photoBefore: "nyucik/bookings/before",
+  photoStart: "nyucik/bookings/arrived",
   machines: "nyucik/machines",
   products: "nyucik/products",
   announcements: "nyucik/announcements",
-  topups: "nyucik/topups",
+  topUps: "nyucik/topups",
   profiles: "nyucik/profiles",
 };

@@ -56,8 +56,8 @@ export const buildDynamicQris = (
   }
 
   if (!hasAmount) {
-    const idx = out.findIndex((row) => row.tag === "59");
-    out.splice(idx === -1 ? out.length : idx, 0, {
+    const position = out.findIndex((row) => row.tag === "59");
+    out.splice(position === -1 ? out.length : position, 0, {
       tag: "54",
       value: amount.toFixed(2),
     });
