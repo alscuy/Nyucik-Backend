@@ -29,7 +29,7 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
     }
     return success(res, { booking_id: booking.id, status }, "Status laundry diperbarui");
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }

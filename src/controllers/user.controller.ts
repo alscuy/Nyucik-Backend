@@ -9,13 +9,13 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import { finishDueLaundry } from "../services/booking.service";
 
 export const getProfile = async (req: AuthRequest, res: Response) => {
-  const u: any = await queryOne(
+  const user: any = await queryOne(
     "SELECT id, full_name, email, phone, role, photo_url, balance, is_verified, created_at FROM users WHERE id = ?",
     [req.user!.id]
   );
-  if (!u) return fail(res, "User tidak ditemukan", 404);
-  u.balance = Number(u.balance);
-  return success(res, u, "Profil berhasil diambil");
+  if (!user) return fail(res, "User tidak ditemukan", 404);
+  user.balance = Number(user.balance);
+  return success(res, user, "Profil berhasil diambil");
 };
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
@@ -97,8 +97,8 @@ export const myTransactions = async (req: AuthRequest, res: Response) => {
      WHERE b.user_id = ? ORDER BY b.created_at DESC`,
     [req.user!.id]
   );
-  bookings.forEach((b: any) => {
-    b.total_price = Number(b.total_price);
+  bookings.forEach((booking: any) => {
+    booking.total_price = Number(booking.total_price);
   });
   const orders = await query(
     `SELECT po.id, 'PRODUCT' AS type, po.product_id, po.quantity,
@@ -122,6 +122,6 @@ export const myBookings = async (req: AuthRequest, res: Response) => {
      ORDER BY b.created_at DESC`,
     [req.user!.id]
   );
-  rows.forEach((r: any) => { r.total_price = Number(r.total_price); });
+  rows.forEach((row: any) => { row.total_price = Number(row.total_price); });
   return success(res, rows, "Riwayat laundry berhasil diambil");
 };

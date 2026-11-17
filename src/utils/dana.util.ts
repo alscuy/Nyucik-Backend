@@ -25,7 +25,7 @@ export const createQris = async (
       qr_image: await generateQrisImage(payload),
       dana_ref: null,
       message:
-        "QRIS dinamis dibuat dari QRIS statis merchant. Bayar lalu klik Sudah Bayar & upload bukti, saldo masuk setelah admin ACC.",
+        "QRIS dinamis dibuat dari QRIS statis merchant. Bayar lalu klik Sudah Bayar & upload bukti, saldo masuk setelah kasir menyetujui.",
     };
   }
 

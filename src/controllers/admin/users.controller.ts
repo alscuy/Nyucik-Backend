@@ -8,8 +8,8 @@ export const listUsers = async (_req: AuthRequest, res: Response) => {
     `SELECT id, full_name, email, phone, role, is_verified, photo_url, balance, created_at
      FROM users ORDER BY created_at DESC`
   );
-  rows.forEach((r: any) => {
-    r.balance = Number(r.balance);
+  rows.forEach((row: any) => {
+    row.balance = Number(row.balance);
   });
   return success(res, rows, "Data semua user berhasil diambil");
 };
@@ -33,28 +33,29 @@ export const getUserDetail = async (req: AuthRequest, res: Response) => {
      WHERE b.user_id = ? ORDER BY b.created_at DESC`,
     [req.params.id]
   );
-  bookings.forEach((b: any) => {
-    b.total_price = Number(b.total_price);
-    b.is_paid = ["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(b.status) && b.paid_at !== null;
+  bookings.forEach((booking: any) => {
+    booking.total_price = Number(booking.total_price);
+    booking.is_paid =
+      ["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(booking.status) && booking.paid_at !== null;
   });
 
-  const topups = await query(
+  const topUpRows = await query(
     "SELECT id, reference, amount, status, paid_at, created_at FROM top_ups WHERE user_id = ? ORDER BY created_at DESC",
     [req.params.id]
   );
-  topups.forEach((t: any) => {
-    t.amount = Number(t.amount);
+  topUpRows.forEach((topUp: any) => {
+    topUp.amount = Number(topUp.amount);
   });
 
   const transactions = await query(
     "SELECT id, type, amount, balance_before, balance_after, description, created_at FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC",
     [req.params.id]
   );
-  transactions.forEach((t: any) => {
-    t.amount = Number(t.amount);
-    t.balance_before = Number(t.balance_before);
-    t.balance_after = Number(t.balance_after);
+  transactions.forEach((transaction: any) => {
+    transaction.amount = Number(transaction.amount);
+    transaction.balance_before = Number(transaction.balance_before);
+    transaction.balance_after = Number(transaction.balance_after);
   });
 
-  return success(res, { user, bookings, topups, transactions }, "Detail user berhasil diambil");
+  return success(res, { user, bookings, topUps: topUpRows, transactions }, "Detail user berhasil diambil");
 };

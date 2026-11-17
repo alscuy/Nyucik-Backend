@@ -69,7 +69,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       201
     );
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }

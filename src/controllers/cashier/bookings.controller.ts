@@ -16,8 +16,8 @@ export const listUnpaidBookings = async (_req: AuthRequest, res: Response) => {
      WHERE b.status = 'PENDING'
      ORDER BY b.created_at ASC`
   );
-  rows.forEach((r: any) => {
-    r.total_price = Number(r.total_price);
+  rows.forEach((row: any) => {
+    row.total_price = Number(row.total_price);
   });
   return success(res, rows, "Laundry yang belum dibayar berhasil diambil");
 };

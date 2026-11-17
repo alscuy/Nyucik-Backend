@@ -11,8 +11,8 @@ export const listPendingTopUps = async (_req: AuthRequest, res: Response) => {
      WHERE t.status = 'WAITING_CONFIRM'
      ORDER BY t.created_at ASC`
   );
-  rows.forEach((r: any) => {
-    r.amount = Number(r.amount);
+  rows.forEach((row: any) => {
+    row.amount = Number(row.amount);
   });
   return success(res, rows, "Bukti top up yang menunggu verifikasi berhasil diambil");
 };

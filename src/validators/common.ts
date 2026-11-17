@@ -1,6 +1,6 @@
 import { z } from "zod";
 
 export const booleanField = z.preprocess(
-  (v) => v === true || v === "true" || v === 1 || v === "1",
+  (value) => value === true || value === "true" || value === 1 || value === "1",
   z.boolean()
 );

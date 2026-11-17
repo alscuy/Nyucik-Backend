@@ -10,7 +10,7 @@ export const registerSchema = z
     password: z.string().min(6, "Password minimal 6 karakter"),
     confirm_password: z.string(),
   })
-  .refine((d) => d.password === d.confirm_password, {
+  .refine((data) => data.password === data.confirm_password, {
     message: "Konfirmasi password tidak sama dengan password",
     path: ["confirm_password"],
   });
@@ -40,7 +40,7 @@ export const changePasswordSchema = z
     new_password: z.string().min(6, "Password baru minimal 6 karakter"),
     confirm_password: z.string(),
   })
-  .refine((d) => d.new_password === d.confirm_password, {
+  .refine((data) => data.new_password === data.confirm_password, {
     message: "Konfirmasi password tidak sama dengan password baru",
     path: ["confirm_password"],
   });

@@ -10,7 +10,7 @@ export const listProducts = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     "SELECT id, name, description, price, stock, photo_url FROM products WHERE is_active = 1 ORDER BY name ASC"
   );
-  rows.forEach((r: any) => { r.price = Number(r.price); });
+  rows.forEach((product: any) => { product.price = Number(product.price); });
   return success(res, rows, "Katalog produk berhasil diambil");
 };
 
@@ -66,7 +66,7 @@ export const purchaseProduct = async (req: AuthRequest, res: Response) => {
 
     return success(res, order, "Pembelian berhasil, silakan tunjukkan ke petugas", 201);
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     if (typeof err.status === "number") return fail(res, err.message, err.status);
     console.error(err);
     return fail(res);
@@ -81,7 +81,7 @@ export const myOrders = async (req: AuthRequest, res: Response) => {
      WHERE po.user_id = ? ORDER BY po.created_at DESC`,
     [req.user!.id]
   );
-  rows.forEach((r: any) => { r.total_price = Number(r.total_price); });
+  rows.forEach((row: any) => { row.total_price = Number(row.total_price); });
   return success(res, rows, "Riwayat pembelian berhasil diambil");
 };
 
@@ -103,7 +103,7 @@ export const completeOrder = async (req: AuthRequest, res: Response) => {
 
 export const listAllProducts = async (_req: AuthRequest, res: Response) => {
   const rows = await query("SELECT * FROM products ORDER BY name ASC");
-  rows.forEach((r: any) => { r.price = Number(r.price); });
+  rows.forEach((product: any) => { product.price = Number(product.price); });
   return success(res, rows, "Semua produk berhasil diambil");
 };
 
@@ -124,7 +124,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 
     return success(res, product, "Produk berhasil ditambahkan", 201);
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }
@@ -156,7 +156,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     updated.price = Number(updated.price);
     return success(res, updated, "Produk berhasil diperbarui");
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }

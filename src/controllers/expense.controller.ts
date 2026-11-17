@@ -10,8 +10,8 @@ export const listExpenses = async (_req: AuthRequest, res: Response) => {
     "SELECT * FROM expenses ORDER BY expense_date DESC, id DESC"
   );
   const list = rows as any[];
-  list.forEach((r) => { r.amount = Number(r.amount); });
-  const total = list.reduce((a, r) => a + Number(r.amount), 0);
+  list.forEach((expense) => { expense.amount = Number(expense.amount); });
+  const total = list.reduce((sum, expense) => sum + Number(expense.amount), 0);
   return success(res, { items: list, total }, "Data pengeluaran berhasil diambil");
 };
 
@@ -25,7 +25,7 @@ export const createExpense = async (req: AuthRequest, res: Response) => {
     );
     return success(res, { id: result[0].insertId, ...data }, "Pengeluaran dicatat", 201);
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }
@@ -52,7 +52,7 @@ export const updateExpense = async (req: AuthRequest, res: Response) => {
     await pool.query(`UPDATE expenses SET ${fields.join(", ")} WHERE id = ?`, values);
     return success(res, null, "Pengeluaran diperbarui");
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }

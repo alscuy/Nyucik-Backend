@@ -2,14 +2,14 @@ import { query, withTransaction } from "../config/database";
 
 export const DURATION_MINUTES = 25;
 
-export const machineInfo = (b: { machine_type?: string }) =>
-  b.machine_type === "WASHING"
+export const machineInfo = (booking: { machine_type?: string }) =>
+  booking.machine_type === "WASHING"
     ? { col: "washing_machine_id", table: "washing_machines" }
     : { col: "drying_machine_id", table: "drying_machines" };
 
-export const toMinutes = (hhmm: string): number => {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + m;
+export const toMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
 };
 
 export const minutesToTime = (total: number): string =>
@@ -24,8 +24,8 @@ export const nowWibTime = (): string =>
     hour12: false,
   }).format(new Date());
 
-export const addMinutesToTime = (hhmmss: string, minutes: number): string =>
-  minutesToTime(toMinutes(hhmmss) + minutes);
+export const addMinutesToTime = (time: string, minutes: number): string =>
+  minutesToTime(toMinutes(time) + minutes);
 
 export const refundBooking = async (conn: any, booking: any, note: string) => {
   if (booking.status !== "CONFIRMED") return 0;

@@ -37,7 +37,7 @@ export const createAnnouncement = async (req: AuthRequest, res: Response) => {
     const announcement: any = await queryOne("SELECT * FROM announcements WHERE id = ?", [result[0].insertId]);
     return success(res, announcement, "Pengumuman berhasil dibuat", 201);
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }
@@ -68,7 +68,7 @@ export const updateAnnouncement = async (req: AuthRequest, res: Response) => {
     const updated: any = await queryOne("SELECT * FROM announcements WHERE id = ?", [req.params.id]);
     return success(res, updated, "Pengumuman berhasil diperbarui");
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }

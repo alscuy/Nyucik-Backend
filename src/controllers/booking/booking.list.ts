@@ -15,8 +15,8 @@ export const getMyBookings = async (req: AuthRequest, res: Response) => {
     `${SELECT_BOOKING} WHERE b.user_id = ? ORDER BY b.created_at DESC`,
     [req.user!.id]
   );
-  rows.forEach((r: any) => {
-    r.total_price = Number(r.total_price);
+  rows.forEach((row: any) => {
+    row.total_price = Number(row.total_price);
   });
   return success(res, rows, "Riwayat laundry berhasil diambil");
 };
@@ -41,8 +41,8 @@ export const getAllBookings = async (_req: AuthRequest, res: Response) => {
     `SELECT b.*, u.full_name, u.email FROM bookings b JOIN users u ON u.id = b.user_id
      ORDER BY b.created_at DESC`
   );
-  rows.forEach((r: any) => {
-    r.total_price = Number(r.total_price);
+  rows.forEach((row: any) => {
+    row.total_price = Number(row.total_price);
   });
   return success(res, rows, "Semua laundry berhasil diambil");
 };

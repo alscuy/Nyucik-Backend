@@ -20,7 +20,7 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
     const employee: any = await queryOne("SELECT * FROM employees WHERE id = ?", [result[0].insertId]);
     return success(res, employee, "Pegawai berhasil ditambahkan", 201);
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }
@@ -47,7 +47,7 @@ export const updateEmployee = async (req: AuthRequest, res: Response) => {
     const updated: any = await queryOne("SELECT * FROM employees WHERE id = ?", [req.params.id]);
     return success(res, updated, "Data pegawai berhasil diperbarui");
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }

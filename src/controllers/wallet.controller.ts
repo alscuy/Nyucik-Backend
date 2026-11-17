@@ -19,10 +19,10 @@ export const getWalletTransactions = async (req: AuthRequest, res: Response) => 
      FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC`,
     [req.user!.id]
   );
-  rows.forEach((r: any) => {
-    r.amount = Number(r.amount);
-    r.balance_before = Number(r.balance_before);
-    r.balance_after = Number(r.balance_after);
+  rows.forEach((row: any) => {
+    row.amount = Number(row.amount);
+    row.balance_before = Number(row.balance_before);
+    row.balance_after = Number(row.balance_after);
   });
   return success(res, rows, "Riwayat saldo berhasil diambil");
 };
@@ -72,7 +72,7 @@ export const getTopUps = async (req: AuthRequest, res: Response) => {
      FROM top_ups WHERE user_id = ? ORDER BY created_at DESC`,
     [req.user!.id]
   );
-  rows.forEach((r: any) => { r.amount = Number(r.amount); });
+  rows.forEach((row: any) => { row.amount = Number(row.amount); });
   return success(res, rows, "Riwayat top up berhasil diambil");
 };
 
@@ -107,7 +107,7 @@ export const uploadTopUpProof = async (req: AuthRequest, res: Response) => {
     return success(
       res,
       { top_up_id: topup.id, proof_url: img.url, status: "WAITING_CONFIRM" },
-      "Bukti pembayaran terkirim, menunggu konfirmasi admin",
+      "Bukti pembayaran terkirim, menunggu konfirmasi kasir",
       201
     );
   } catch (err) {

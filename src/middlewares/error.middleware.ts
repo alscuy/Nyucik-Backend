@@ -15,8 +15,8 @@ export const errorHandler = (
   }
 
   if (err instanceof ZodError) {
-    const msg = err.errors.map((e) => e.message).join(", ");
-    return res.status(400).json({ success: false, message: msg });
+    const message = err.errors.map((issue) => issue.message).join(", ");
+    return res.status(400).json({ success: false, message });
   }
 
   console.error(err);

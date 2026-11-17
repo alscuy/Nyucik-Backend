@@ -1,11 +1,6 @@
 -- ============================================================
 -- NYUCIK - Self Service Laundry | MySQL Aiven Schema
 -- Jalankan: npm run migrate
--- ============================================================
-
--- ============================================================
--- NYUCIK - Self Service Laundry | MySQL Aiven Schema
--- Jalankan: npm run migrate
 -- Database 'nyucik_db' dibuat otomatis jika belum ada
 -- ============================================================
 
@@ -95,8 +90,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (washing_machine_id) REFERENCES washing_machines(id) ON DELETE SET NULL,
   FOREIGN KEY (drying_machine_id) REFERENCES drying_machines(id) ON DELETE SET NULL,
-  UNIQUE KEY uk_wash_slot (washing_machine_id, booking_date, start_time),
-  INDEX idx_dry_slot (drying_machine_id, booking_date),
+  INDEX idx_wash_usage (washing_machine_id, booking_date),
+  INDEX idx_dry_usage (drying_machine_id, booking_date),
   INDEX idx_bookings_user (user_id),
   INDEX idx_bookings_date (booking_date)
 );
@@ -168,7 +163,7 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   INDEX idx_wallet_ref (reference_type, reference_id)
 );
 
--- ---------------- TOP UPS (QRIS + verifikasi manual admin) ----------------
+-- ---------------- TOP UPS (QRIS + verifikasi manual kasir) ----------------
 CREATE TABLE IF NOT EXISTS top_ups (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id    INT UNSIGNED NOT NULL,

@@ -7,9 +7,9 @@ import { AuthRequest } from "../../middlewares/auth.middleware";
 
 export const listWashingMachines = async (_req: AuthRequest, res: Response) => {
   const rows = await query("SELECT * FROM washing_machines ORDER BY code ASC");
-  rows.forEach((r: any) => {
-    r.capacity_kg = Number(r.capacity_kg);
-    r.price_per_use = Number(r.price_per_use);
+  rows.forEach((row: any) => {
+    row.capacity_kg = Number(row.capacity_kg);
+    row.price_per_use = Number(row.price_per_use);
   });
   return success(res, rows, "Data mesin cuci berhasil diambil");
 };
@@ -43,7 +43,7 @@ export const createWashingMachine = async (req: AuthRequest, res: Response) => {
     machine.price_per_use = Number(machine.price_per_use);
     return success(res, machine, "Mesin cuci berhasil ditambahkan", 201);
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }
@@ -78,7 +78,7 @@ export const updateWashingMachine = async (req: AuthRequest, res: Response) => {
     updated.price_per_use = Number(updated.price_per_use);
     return success(res, updated, "Mesin cuci berhasil diperbarui");
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }
@@ -93,7 +93,7 @@ export const updateWashingStatus = async (req: AuthRequest, res: Response) => {
     await pool.query("UPDATE washing_machines SET status = ? WHERE id = ?", [status, req.params.id]);
     return success(res, { id: Number(req.params.id), status }, "Status mesin cuci diperbarui");
   } catch (err: any) {
-    if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
+    if (err.name === "ZodError") return fail(res, err.errors.map((issue: any) => issue.message).join(", "), 400);
     console.error(err);
     return fail(res);
   }
