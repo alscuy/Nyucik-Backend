@@ -11,15 +11,13 @@ import {
   loginSchema,
 } from "../validators";
 import type { AuthRequest } from "../middlewares/auth.middleware";
-// otp ganti di sini 
 const generateOTP = (): string =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-/** Buat OTP baru: hash + simpan ke users, kirim email */
 const createAndSendOtp = async (userId: number, email: string) => {
   const otp = generateOTP();
   const otpHash = await bcrypt.hash(otp, 10);
-  // Expiry dihitung di Node (WIB), bukan NOW() MySQL (UTC) — biar gak selisih 7 jam
+
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
   await pool.query(
     `UPDATE users SET otp_hash = ?, otp_expires_at = ?,
@@ -30,7 +28,6 @@ const createAndSendOtp = async (userId: number, email: string) => {
   return otp;
 };
 
-/** POST /api/v1/auth/register */
 export const register = async (req: Request, res: Response) => {
   try {
     const data = registerSchema.parse(req.body);
@@ -78,7 +75,6 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-/** POST /api/v1/auth/verify-otp */
 export const verifyOtp = async (req: Request, res: Response) => {
   try {
     const data = verifyOtpSchema.parse(req.body);
@@ -106,7 +102,6 @@ export const verifyOtp = async (req: Request, res: Response) => {
       return fail(res, "Kode OTP salah", 400);
     }
 
-    // OTP hanya dipakai sekali
     await pool.query(
       `UPDATE users SET is_verified = 1, otp_hash = NULL, otp_expires_at = NULL,
        otp_attempts = 0, otp_resend_count = 0 WHERE id = ?`,
@@ -123,10 +118,9 @@ export const verifyOtp = async (req: Request, res: Response) => {
   }
 };
 
-/** POST /api/v1/auth/resend-otp */
 export const resendOtp = async (req: Request, res: Response) => {
   try {
-    // Kalau user ngirim otp ke endpoint ini, arahkan ke endpoint yang benar
+
     if (req.body?.otp) {
       return fail(
         res,
@@ -145,7 +139,6 @@ export const resendOtp = async (req: Request, res: Response) => {
     if (!user) return fail(res, "Email tidak terdaftar, silakan register", 404);
     if (user.is_verified) return fail(res, "Akun sudah terverifikasi, silakan login", 409);
 
-    // Jeda kirim OTP: sekali kirim, harus tunggu 5 menit untuk kirim lagi
     if (user.otp_last_sent_at) {
       const last = parseWib(user.otp_last_sent_at);
       if (last && Date.now() - last.getTime() < 5 * 60 * 1000) {
@@ -166,7 +159,6 @@ export const resendOtp = async (req: Request, res: Response) => {
   }
 };
 
-/** POST /api/v1/auth/login */
 export const login = async (req: Request, res: Response) => {
   try {
     const data = loginSchema.parse(req.body);
@@ -208,7 +200,6 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-/** POST /api/v1/auth/logout */
 export const logout = async (req: AuthRequest, res: Response) => {
   return success(res, null, "Logout berhasil. Hapus token di sisi aplikasi.");
 };

@@ -1,6 +1,5 @@
 import { Response } from "express";
 
-/** Format response JSON yang konsisten: { success, message, data } */
 export const success = (
   res: Response,
   data: unknown = null,

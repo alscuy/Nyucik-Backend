@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
   email            VARCHAR(120) NOT NULL UNIQUE,
   phone            VARCHAR(20) NOT NULL,
   password         VARCHAR(255) NOT NULL,
-  role             ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER',
+  role             ENUM('USER','ADMIN','CASHIER') NOT NULL DEFAULT 'USER',
   is_verified      TINYINT(1) NOT NULL DEFAULT 0,
   photo_url        VARCHAR(500) NULL,
   balance          DECIMAL(14,2) NOT NULL DEFAULT 0.00,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS washing_machines (
   id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   code         VARCHAR(10) NOT NULL UNIQUE,
   capacity_kg  INT NOT NULL,
-  price_per_kg DECIMAL(10,2) NOT NULL,
+  price_per_use DECIMAL(10,2) NOT NULL,
   status       ENUM('AVAILABLE','BOOKED','IN_USE','MAINTENANCE') NOT NULL DEFAULT 'AVAILABLE',
   description  TEXT NULL,
   photo_url    VARCHAR(500) NULL,
@@ -83,7 +83,6 @@ CREATE TABLE IF NOT EXISTS bookings (
   booking_date       DATE NOT NULL,
   start_time         TIME NOT NULL,
   end_time           TIME NOT NULL,
-  weight_kg          DECIMAL(6,2) NULL,
   total_price        DECIMAL(12,2) NOT NULL,
   status             ENUM('PENDING','CONFIRMED','IN_PROGRESS','COMPLETED','CANCELLED') NOT NULL DEFAULT 'PENDING',
   photo_before_url   VARCHAR(500) NULL,
@@ -167,15 +166,17 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   INDEX idx_wallet_ref (reference_type, reference_id)
 );
 
--- ---------------- TOP UPS (DANA QRIS) ----------------
+-- ---------------- TOP UPS (QRIS + verifikasi manual admin) ----------------
 CREATE TABLE IF NOT EXISTS top_ups (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id    INT UNSIGNED NOT NULL,
   reference  VARCHAR(40) NOT NULL UNIQUE,
   amount     DECIMAL(14,2) NOT NULL,
-  status     ENUM('PENDING','PAID','EXPIRED','FAILED') NOT NULL DEFAULT 'PENDING',
+  status     ENUM('PENDING','WAITING_CONFIRM','PAID','REJECTED','EXPIRED','FAILED') NOT NULL DEFAULT 'PENDING',
   qr_string  TEXT NULL,
   dana_ref   VARCHAR(100) NULL UNIQUE,
+  proof_url  TEXT NULL,
+  admin_note VARCHAR(255) NULL,
   paid_at    DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

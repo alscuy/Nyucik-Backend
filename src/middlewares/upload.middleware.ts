@@ -4,9 +4,8 @@ import { HttpError } from "../utils/httpError";
 const storage = multer.memoryStorage();
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_SIZE = 3 * 1024 * 1024; // 3 MB
+const MAX_SIZE = 3 * 1024 * 1024;
 
-/** Validasi tipe & ukuran file upload (khusus gambar) */
 export const upload = multer({
   storage,
   limits: { fileSize: MAX_SIZE },

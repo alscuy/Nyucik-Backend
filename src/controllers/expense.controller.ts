@@ -5,13 +5,6 @@ import { notFound } from "../utils/httpError";
 import { expenseSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
-/**
- * Pengeluaran laundry (biaya operasional: sabun, listrik, perawatan, dll).
- * Dipakai dashboard "Pemasukan & Pengeluaran" admin.
- * Laporan pendapatan (booking + produk) tetap dari admin.controller.
- */
-
-/** GET /api/v1/expenses — semua pengeluaran urut terbaru + total */
 export const listExpenses = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     "SELECT * FROM expenses ORDER BY expense_date DESC, id DESC"
@@ -22,7 +15,6 @@ export const listExpenses = async (_req: AuthRequest, res: Response) => {
   return success(res, { items: list, total }, "Data pengeluaran berhasil diambil");
 };
 
-/** POST /api/v1/expenses (admin) */
 export const createExpense = async (req: AuthRequest, res: Response) => {
   try {
     const data = expenseSchema.parse(req.body);
@@ -39,7 +31,6 @@ export const createExpense = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/expenses/:id (admin) — ubah dinamis */
 export const updateExpense = async (req: AuthRequest, res: Response) => {
   try {
     const exist: any = await query(
@@ -67,7 +58,6 @@ export const updateExpense = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** DELETE /api/v1/expenses/:id (admin) */
 export const deleteExpense = async (req: AuthRequest, res: Response) => {
   const exist: any = await query("SELECT id FROM expenses WHERE id = ?", [req.params.id]);
   if (exist.length === 0) return notFound("Pengeluaran tidak ditemukan");

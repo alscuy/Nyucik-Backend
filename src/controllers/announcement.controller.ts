@@ -6,7 +6,6 @@ import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { announcementSchemaBase, announcementSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
-/** GET /api/v1/announcements - pengumuman aktif (tampil di halaman utama user) */
 export const listAnnouncements = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     `SELECT id, title, content, image_url, start_date, end_date, is_active, created_at
@@ -18,13 +17,11 @@ export const listAnnouncements = async (_req: AuthRequest, res: Response) => {
   return success(res, rows, "Pengumuman berhasil diambil");
 };
 
-/** GET /api/v1/announcements/admin/all (admin) - semua pengumuman */
 export const listAllAnnouncements = async (_req: AuthRequest, res: Response) => {
   const rows = await query("SELECT * FROM announcements ORDER BY start_date DESC");
   return success(res, rows, "Semua pengumuman berhasil diambil");
 };
 
-/** POST /api/v1/announcements (admin, multipart: photo) */
 export const createAnnouncement = async (req: AuthRequest, res: Response) => {
   try {
     const data = announcementSchema.parse(req.body);
@@ -46,7 +43,6 @@ export const createAnnouncement = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/announcements/:id (admin, multipart: photo) */
 export const updateAnnouncement = async (req: AuthRequest, res: Response) => {
   try {
     const existing: any = await queryOne("SELECT * FROM announcements WHERE id = ?", [req.params.id]);
@@ -78,7 +74,6 @@ export const updateAnnouncement = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** DELETE /api/v1/announcements/:id (admin) */
 export const deleteAnnouncement = async (req: AuthRequest, res: Response) => {
   const existing: any = await queryOne("SELECT id FROM announcements WHERE id = ?", [req.params.id]);
   if (!existing) return notFound("Pengumuman tidak ditemukan");

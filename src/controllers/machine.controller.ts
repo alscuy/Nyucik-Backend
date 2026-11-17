@@ -12,21 +12,17 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 
 const MACHINE_STATUS = ["AVAILABLE", "BOOKED", "IN_USE", "MAINTENANCE"] as const;
 
-// ==================== MESIN CUCI ====================
-
-/** GET /api/v1/washing-machines */
 export const listWashingMachines = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     "SELECT * FROM washing_machines ORDER BY code ASC"
   );
   rows.forEach((r: any) => {
     r.capacity_kg = Number(r.capacity_kg);
-    r.price_per_kg = Number(r.price_per_kg);
+    r.price_per_use = Number(r.price_per_use);
   });
   return success(res, rows, "Data mesin cuci berhasil diambil");
 };
 
-/** GET /api/v1/washing-machines/:id */
 export const getWashingMachine = async (req: AuthRequest, res: Response) => {
   const machine: any = await queryOne(
     "SELECT * FROM washing_machines WHERE id = ?",
@@ -38,7 +34,6 @@ export const getWashingMachine = async (req: AuthRequest, res: Response) => {
   return success(res, machine, "Detail mesin cuci berhasil diambil");
 };
 
-/** POST /api/v1/washing-machines (admin) */
 export const createWashingMachine = async (req: AuthRequest, res: Response) => {
   try {
     const data = washingMachineSchema.parse(req.body);
@@ -53,9 +48,9 @@ export const createWashingMachine = async (req: AuthRequest, res: Response) => {
     if (req.file) photoUrl = (await uploadImage(req.file.buffer, FOLDERS.machines)).url;
 
     const result: any = await pool.query(
-      `INSERT INTO washing_machines (code, capacity_kg, price_per_kg, status, description, photo_url)
+      `INSERT INTO washing_machines (code, capacity_kg, price_per_use, status, description, photo_url)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [data.code, data.capacity_kg, data.price_per_kg, data.status, data.description, photoUrl]
+      [data.code, data.capacity_kg, data.price_per_use, data.status, data.description, photoUrl]
     );
     const machine: any = await queryOne("SELECT * FROM washing_machines WHERE id = ?", [result[0].insertId]);
     machine.capacity_kg = Number(machine.capacity_kg);
@@ -69,7 +64,6 @@ export const createWashingMachine = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/washing-machines/:id (admin) */
 export const updateWashingMachine = async (req: AuthRequest, res: Response) => {
   try {
     const machine: any = await queryOne("SELECT * FROM washing_machines WHERE id = ?", [req.params.id]);
@@ -94,7 +88,7 @@ export const updateWashingMachine = async (req: AuthRequest, res: Response) => {
 
     const updated: any = await queryOne("SELECT * FROM washing_machines WHERE id = ?", [req.params.id]);
     updated.capacity_kg = Number(updated.capacity_kg);
-    updated.price_per_kg = Number(updated.price_per_kg);
+    updated.price_per_use = Number(updated.price_per_use);
     return success(res, updated, "Mesin cuci berhasil diperbarui");
   } catch (err: any) {
     if (err.name === "ZodError") return fail(res, err.errors.map((e: any) => e.message).join(", "), 400);
@@ -103,7 +97,6 @@ export const updateWashingMachine = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/washing-machines/:id/status (admin) */
 export const updateWashingStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { status } = machineStatusSchema.parse(req.body);
@@ -119,7 +112,6 @@ export const updateWashingStatus = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** DELETE /api/v1/washing-machines/:id (admin) */
 export const deleteWashingMachine = async (req: AuthRequest, res: Response) => {
   const machine: any = await queryOne("SELECT id FROM washing_machines WHERE id = ?", [req.params.id]);
   if (!machine) return notFound("Mesin cuci tidak ditemukan");
@@ -127,9 +119,6 @@ export const deleteWashingMachine = async (req: AuthRequest, res: Response) => {
   return success(res, null, "Mesin cuci berhasil dihapus");
 };
 
-// ==================== MESIN PENGERING ====================
-
-/** GET /api/v1/drying-machines */
 export const listDryingMachines = async (_req: AuthRequest, res: Response) => {
   const rows = await query("SELECT * FROM drying_machines ORDER BY code ASC");
   rows.forEach((r: any) => {
@@ -139,7 +128,6 @@ export const listDryingMachines = async (_req: AuthRequest, res: Response) => {
   return success(res, rows, "Data mesin pengering berhasil diambil");
 };
 
-/** GET /api/v1/drying-machines/:id */
 export const getDryingMachine = async (req: AuthRequest, res: Response) => {
   const machine: any = await queryOne("SELECT * FROM drying_machines WHERE id = ?", [req.params.id]);
   if (!machine) return notFound("Mesin pengering tidak ditemukan");
@@ -148,7 +136,6 @@ export const getDryingMachine = async (req: AuthRequest, res: Response) => {
   return success(res, machine, "Detail mesin pengering berhasil diambil");
 };
 
-/** POST /api/v1/drying-machines (admin) */
 export const createDryingMachine = async (req: AuthRequest, res: Response) => {
   try {
     const data = dryingMachineSchema.parse(req.body);
@@ -176,7 +163,6 @@ export const createDryingMachine = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/drying-machines/:id (admin) */
 export const updateDryingMachine = async (req: AuthRequest, res: Response) => {
   try {
     const machine: any = await queryOne("SELECT * FROM drying_machines WHERE id = ?", [req.params.id]);
@@ -210,7 +196,6 @@ export const updateDryingMachine = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/drying-machines/:id/status (admin) */
 export const updateDryingStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { status } = machineStatusSchema.parse(req.body);
@@ -227,7 +212,6 @@ export const updateDryingStatus = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** DELETE /api/v1/drying-machines/:id (admin) */
 export const deleteDryingMachine = async (req: AuthRequest, res: Response) => {
   const machine: any = await queryOne("SELECT id FROM drying_machines WHERE id = ?", [req.params.id]);
   if (!machine) return notFound("Mesin pengering tidak ditemukan");

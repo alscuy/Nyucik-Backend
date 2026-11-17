@@ -15,14 +15,12 @@ export const pool = mysql.createPool({
   database: process.env.DB_NAME,
   port: Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
-  // Di serverless (Vercel) tiap instance punya pool sendiri — kecilkan via
-  // DB_POOL_LIMIT=1..3 di env supaya tidak menghabiskan kuota koneksi MySQL.
+
   connectionLimit: Number(process.env.DB_POOL_LIMIT) || 10,
   queueLimit: 0,
   ssl: sslConfig,
   decimalNumbers: true,
-  // Semua DATE/DATETIME/TIME keluar sebagai string & ditulis pakai zona WIB
-  // (MySQL Aiven pakai UTC, jadi dipaksa +07:00 biar gak selisih 7 jam)
+
   dateStrings: true,
   timezone: "+07:00",
 });
@@ -38,13 +36,11 @@ export const testConnection = async () => {
   }
 };
 
-/** Jalankan query biasa, return rows */
 export const query = async (sql: string, params?: unknown[]): Promise<any[]> => {
   const [rows] = await pool.query(sql, params);
   return rows as any[];
 };
 
-/** Ambil 1 row atau null */
 export const queryOne = async (
   sql: string,
   params?: unknown[]
@@ -53,17 +49,14 @@ export const queryOne = async (
   return rows.length > 0 ? rows[0] : null;
 };
 
-/** Ubah string DATETIME MySQL ("2026-11-13 21:40:00") jadi Date zona WIB */
 export const parseWib = (value: string | null | undefined): Date | null => {
   if (!value) return null;
   return new Date(`${String(value).replace(" ", "T")}+07:00`);
 };
 
-/** Tanggal hari ini versi WIB, format YYYY-MM-DD */
 export const todayWib = (): string =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
 
-/** Database transaction: rollback otomatis kalau ada error */
 export const withTransaction = async <T>(
   fn: (conn: mysql.PoolConnection) => Promise<T>
 ): Promise<T> => {

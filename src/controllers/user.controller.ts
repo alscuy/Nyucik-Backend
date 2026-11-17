@@ -5,10 +5,8 @@ import { success, fail } from "../utils/response";
 import { badRequest, notFound } from "../utils/httpError";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { updateProfileSchema, changePasswordSchema } from "../validators";
-import { autoExpireBooking } from "./booking.controller";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
-/** GET /api/v1/users/me */
 export const getProfile = async (req: AuthRequest, res: Response) => {
   const u: any = await queryOne(
     "SELECT id, full_name, email, phone, role, photo_url, balance, is_verified, created_at FROM users WHERE id = ?",
@@ -19,12 +17,10 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
   return success(res, u, "Profil berhasil diambil");
 };
 
-/** PATCH /api/v1/users/me (multipart, foto profil optional) */
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
     const data = updateProfileSchema.parse(req.body);
 
-    // cek email unik kalau diubah
     if (data.email) {
       const exist = await queryOne(
         "SELECT id FROM users WHERE email = ? AND id <> ?",
@@ -69,7 +65,6 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/users/me/password */
 export const changePassword = async (req: AuthRequest, res: Response) => {
   try {
     const data = changePasswordSchema.parse(req.body);
@@ -91,7 +86,6 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** GET /api/v1/users/me/transactions - gabungan riwayat booking & pembelian produk */
 export const myTransactions = async (req: AuthRequest, res: Response) => {
   const bookings = await query(
     `SELECT b.id, 'BOOKING' AS type, b.machine_type, b.booking_date, b.start_time,
@@ -110,7 +104,6 @@ export const myTransactions = async (req: AuthRequest, res: Response) => {
   return success(res, { bookings, product_orders: orders }, "Riwayat transaksi berhasil diambil");
 };
 
-/** GET /api/v1/users/me/bookings - detail riwayat booking dengan foto */
 export const myBookings = async (req: AuthRequest, res: Response) => {
   const rows = await query(
     `SELECT b.*, w.code AS washing_code, d.code AS drying_code
@@ -121,9 +114,6 @@ export const myBookings = async (req: AuthRequest, res: Response) => {
      ORDER BY b.created_at DESC`,
     [req.user!.id]
   );
-  rows.forEach((r: any) => { r.total_price = Number(r.total_price); r.weight_kg = r.weight_kg ? Number(r.weight_kg) : null; });
-  for (const r of rows as any[]) {
-    if (await autoExpireBooking(r)) r.status = "CANCELLED";
-  }
+  rows.forEach((r: any) => { r.total_price = Number(r.total_price); });
   return success(res, rows, "Riwayat booking berhasil diambil");
 };

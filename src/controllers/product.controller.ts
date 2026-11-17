@@ -6,9 +6,6 @@ import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { productSchema, purchaseSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
-// ==================== USER ====================
-
-/** GET /api/v1/products - katalog produk aktif */
 export const listProducts = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     "SELECT id, name, description, price, stock, photo_url FROM products WHERE is_active = 1 ORDER BY name ASC"
@@ -17,7 +14,6 @@ export const listProducts = async (_req: AuthRequest, res: Response) => {
   return success(res, rows, "Katalog produk berhasil diambil");
 };
 
-/** GET /api/v1/products/:id - detail produk */
 export const getProduct = async (req: AuthRequest, res: Response) => {
   const product: any = await queryOne(
     "SELECT id, name, description, price, stock, photo_url FROM products WHERE id = ? AND is_active = 1",
@@ -28,13 +24,12 @@ export const getProduct = async (req: AuthRequest, res: Response) => {
   return success(res, product, "Detail produk berhasil diambil");
 };
 
-/** POST /api/v1/products/orders - beli produk pakai saldo (stok aman: DB transaction) */
 export const purchaseProduct = async (req: AuthRequest, res: Response) => {
   try {
     const data = purchaseSchema.parse(req.body);
 
     const order = await withTransaction(async (conn) => {
-      // Lock produk & cek stok (stok tidak boleh negatif)
+
       const [productRows]: any = await conn.query("SELECT * FROM products WHERE id = ? AND is_active = 1 FOR UPDATE", [data.product_id]);
       if (productRows.length === 0) {
         throw notFound("Produk tidak ditemukan");
@@ -44,7 +39,6 @@ export const purchaseProduct = async (req: AuthRequest, res: Response) => {
         throw badRequest(`Stok tidak cukup. Sisa stok: ${product.stock}`);
       }
 
-      // Lock saldo user
       const [userRows]: any = await conn.query("SELECT balance FROM users WHERE id = ? FOR UPDATE", [req.user!.id]);
       const balance = Number(userRows[0].balance);
       const totalPrice = Number(product.price) * data.quantity;
@@ -52,13 +46,11 @@ export const purchaseProduct = async (req: AuthRequest, res: Response) => {
         throw badRequest(`Saldo tidak cukup. Saldo: Rp${balance}, total: Rp${totalPrice}`);
       }
 
-      // Kurangi stok & saldo
       const before = balance;
       const after = balance - totalPrice;
       await conn.query("UPDATE products SET stock = stock - ? WHERE id = ?", [data.quantity, data.product_id]);
       await conn.query("UPDATE users SET balance = ? WHERE id = ?", [after, req.user!.id]);
 
-      // Simpan order + catat wallet transaction
       const [orderResult]: any = await conn.query(
         "INSERT INTO product_orders (user_id, product_id, quantity, total_price) VALUES (?, ?, ?, ?)",
         [req.user!.id, data.product_id, data.quantity, totalPrice]
@@ -81,7 +73,6 @@ export const purchaseProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** GET /api/v1/products/orders/my - riwayat pembelian */
 export const myOrders = async (req: AuthRequest, res: Response) => {
   const rows = await query(
     `SELECT po.id, po.product_id, p.name AS product_name, p.photo_url,
@@ -94,10 +85,6 @@ export const myOrders = async (req: AuthRequest, res: Response) => {
   return success(res, rows, "Riwayat pembelian berhasil diambil");
 };
 
-/**
- * POST /api/v1/products/orders/:id/complete - konfirmasi produk sudah diterima.
- * Alur: beli (status PENDING) -> petugas serahkan barang -> user konfirmasi -> COMPLETED.
- */
 export const completeOrder = async (req: AuthRequest, res: Response) => {
   const order: any = await queryOne(
     "SELECT * FROM product_orders WHERE id = ? AND user_id = ?",
@@ -114,16 +101,12 @@ export const completeOrder = async (req: AuthRequest, res: Response) => {
   return success(res, { id: Number(req.params.id), status: "COMPLETED" }, "Pesanan dikonfirmasi selesai. Terima kasih!");
 };
 
-// ==================== ADMIN ====================
-
-/** GET /api/v1/products/admin/all (admin) - termasuk yang tidak aktif */
 export const listAllProducts = async (_req: AuthRequest, res: Response) => {
   const rows = await query("SELECT * FROM products ORDER BY name ASC");
   rows.forEach((r: any) => { r.price = Number(r.price); });
   return success(res, rows, "Semua produk berhasil diambil");
 };
 
-/** POST /api/v1/products (admin, multipart: photo) */
 export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
     const data = productSchema.parse(req.body);
@@ -147,7 +130,6 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/products/:id (admin, multipart: photo) */
 export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     const product: any = await queryOne("SELECT * FROM products WHERE id = ?", [req.params.id]);
@@ -180,7 +162,6 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** DELETE /api/v1/products/:id (admin) */
 export const deleteProduct = async (req: AuthRequest, res: Response) => {
   const product: any = await queryOne("SELECT id FROM products WHERE id = ?", [req.params.id]);
   if (!product) return notFound("Produk tidak ditemukan");

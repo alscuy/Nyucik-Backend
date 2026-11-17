@@ -1,4 +1,3 @@
-/** Error class dengan HTTP status, dipakai di semua controller */
 export class HttpError extends Error {
   status: number;
 

@@ -19,7 +19,6 @@ import { upload } from "../middlewares/upload.middleware";
 const router = Router();
 const adminOnly = [authenticate, requireAdmin];
 
-// ==================== MESIN CUCI ====================
 router.get("/washing-machines", authenticate, listWashingMachines);
 router.get("/washing-machines/:id", authenticate, getWashingMachine);
 router.post("/washing-machines", adminOnly, upload.single("photo"), createWashingMachine);
@@ -27,7 +26,6 @@ router.patch("/washing-machines/:id", adminOnly, upload.single("photo"), updateW
 router.patch("/washing-machines/:id/status", adminOnly, updateWashingStatus);
 router.delete("/washing-machines/:id", adminOnly, deleteWashingMachine);
 
-// ==================== MESIN PENGERING ====================
 router.get("/drying-machines", authenticate, listDryingMachines);
 router.get("/drying-machines/:id", authenticate, getDryingMachine);
 router.post("/drying-machines", adminOnly, upload.single("photo"), createDryingMachine);

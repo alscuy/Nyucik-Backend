@@ -1,12 +1,10 @@
 import { z } from "zod";
 
-/** Konversi string dari multipart form ("true"/"1") jadi boolean */
 const booleanField = z.preprocess(
   (v) => v === true || v === "true" || v === 1 || v === "1",
   z.boolean()
 );
 
-// ==================== AUTH ====================
 export const registerSchema = z
   .object({
     full_name: z.string().min(3, "Nama lengkap minimal 3 karakter"),
@@ -52,11 +50,10 @@ export const changePasswordSchema = z
     path: ["confirm_password"],
   });
 
-// ==================== MESIN ====================
 export const washingMachineSchema = z.object({
   code: z.string().min(1, "Kode mesin wajib diisi"),
   capacity_kg: z.coerce.number().int().positive("Kapasitas wajib diisi"),
-  price_per_kg: z.coerce.number().positive("Harga per kg wajib diisi"),
+  price_per_use: z.coerce.number().positive("Harga per pakai wajib diisi"),
   status: z
     .enum(["AVAILABLE", "BOOKED", "IN_USE", "MAINTENANCE"])
     .optional()
@@ -74,7 +71,6 @@ export const dryingMachineSchema = z.object({
   description: z.string().optional(),
 });
 
-// ==================== BOOKING ====================
 export const createBookingSchema = z
   .object({
     machine_type: z.enum(["WASHING", "DRYING"], {
@@ -87,14 +83,6 @@ export const createBookingSchema = z
     start_time: z
       .string()
       .regex(/^\d{2}:\d{2}$/, "Jam harus format HH:MM (contoh 10:00)"),
-    weight_kg: z.coerce
-      .number()
-      .positive("Berat cucian wajib diisi untuk mesin cuci")
-      .optional(),
-  })
-  .refine((d) => d.machine_type !== "WASHING" || d.weight_kg !== undefined, {
-    message: "Berat cucian wajib diisi untuk mesin cuci",
-    path: ["weight_kg"],
   });
 
 export const purchaseSchema = z.object({
@@ -106,7 +94,6 @@ export const purchaseSchema = z.object({
     .max(100, "Quantity maksimal 100"),
 });
 
-// ==================== PRODUK / PENGUMUMAN / PEGAWAI ====================
 export const productSchema = z.object({
   name: z.string().min(3, "Nama produk minimal 3 karakter"),
   description: z.string().optional(),

@@ -12,7 +12,8 @@ USE nyucik_db;
 INSERT INTO users (full_name, email, phone, password, role, is_verified, balance)
 VALUES
   ('Admin Nyucik',  'admin@nyucik.com', '081200000001', '$2a$10$hUjEKSCg22mBT0N5X6qT7OgNTeEWLEFWSrxO8ui8szm7dz02mt3H2', 'ADMIN', 1, 0.00),
-  ('Budi User',     'user@nyucik.com',  '081200000002', '$2a$10$maaPb2iVyQpll5f2cGqQwu5s7H2wb0X6cKMgeg8BzOvpwp9Qo9lG2', 'USER',  1, 100000.00)
+  ('Budi User',     'user@nyucik.com',  '081200000002', '$2a$10$maaPb2iVyQpll5f2cGqQwu5s7H2wb0X6cKMgeg8BzOvpwp9Qo9lG2', 'USER',  1, 100000.00),
+  ('Kasir Nyucik',  'kasir@nyucik.com', '081200000003', '$2a$10$48b7B0ZM1UBN6n7MsGykBuC07ZCU3b62uJ3FvoyxYf39Q2pjO1Fu2', 'CASHIER', 1, 0.00)
 ON DUPLICATE KEY UPDATE email = VALUES(email);
 
 -- WASHING MACHINES, DRYING MACHINES & PRODUCTS

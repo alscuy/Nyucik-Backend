@@ -11,7 +11,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-/** Kirim OTP 6 digit ke email user Nyucik */
 export const sendOTPEmail = async (to: string, otp: string) => {
   const mailOptions = {
     from: `"Nyucik Laundry" <${process.env.EMAIL_USER}>`,

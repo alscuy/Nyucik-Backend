@@ -1,15 +1,5 @@
 import cloudinary from "../config/cloudinary";
 
-/**
- * Upload buffer (dari multer) ke Cloudinary.
- * Folder:
- *  - nyucik/bookings/before  -> foto cucian saat booking
- *  - nyucik/bookings/arrived -> foto bukti sudah sampai di tempat
- *  - nyucik/machines         -> foto mesin cuci/pengering
- *  - nyucik/products         -> foto produk
- *  - nyucik/announcements    -> foto pengumuman
- *  - nyucik/profiles         -> foto profil user
- */
 export const uploadImage = (
   buffer: Buffer,
   folder: string
@@ -31,5 +21,6 @@ export const FOLDERS = {
   machines: "nyucik/machines",
   products: "nyucik/products",
   announcements: "nyucik/announcements",
+  topups: "nyucik/topups",
   profiles: "nyucik/profiles",
 };

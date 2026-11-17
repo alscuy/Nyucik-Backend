@@ -4,6 +4,7 @@ import {
   listUsers,
   listTransactions,
   listPayments,
+  verifyTopUp,
   revenueReport,
   getUserDetail,
   dailyReport,
@@ -15,10 +16,11 @@ const adminOnly = [authenticate, requireAdmin];
 
 router.get("/dashboard", adminOnly, dashboard);
 router.get("/users", adminOnly, listUsers);
-router.get("/users/:id", adminOnly, getUserDetail);       // profil + log user (udh bayar/blm)
+router.get("/users/:id", adminOnly, getUserDetail);
 router.get("/transactions", adminOnly, listTransactions);
 router.get("/payments", adminOnly, listPayments);
+router.patch("/topups/:id/verify", adminOnly, verifyTopUp);
 router.get("/revenue", adminOnly, revenueReport);
-router.get("/revenue/daily", adminOnly, dailyReport);     // log terjual/terpakai hari ini (IDR)
+router.get("/revenue/daily", adminOnly, dailyReport);
 
 export default router;

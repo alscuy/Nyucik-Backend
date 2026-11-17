@@ -16,14 +16,12 @@ import { upload } from "../middlewares/upload.middleware";
 const router = Router();
 const adminOnly = [authenticate, requireAdmin];
 
-// ==================== USER ====================
 router.get("/", authenticate, listProducts);
 router.get("/:id", authenticate, getProduct);
-router.post("/orders", authenticate, purchaseProduct);   // beli produk pakai saldo
+router.post("/orders", authenticate, purchaseProduct);
 router.get("/orders/my", authenticate, myOrders);
-router.post("/orders/:id/complete", authenticate, completeOrder); // konfirmasi barang diterima
+router.post("/orders/:id/complete", authenticate, completeOrder);
 
-// ==================== ADMIN ====================
 router.get("/admin/all", adminOnly, listAllProducts);
 router.post("/", adminOnly, upload.single("photo"), createProduct);
 router.patch("/:id", adminOnly, upload.single("photo"), updateProduct);

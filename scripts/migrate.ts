@@ -9,8 +9,6 @@ const run = async () => {
   const schemaPath = path.join(__dirname, "..", "db", "schema.sql");
   const sql = fs.readFileSync(schemaPath, "utf-8");
 
-  // Connect TANPA memilih database dulu, karena schema.sql
-  // berisi CREATE DATABASE IF NOT EXISTS nyucik_db + USE nyucik_db
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT) || 3306,

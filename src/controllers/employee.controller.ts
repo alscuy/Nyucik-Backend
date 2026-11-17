@@ -5,13 +5,11 @@ import { notFound } from "../utils/httpError";
 import { employeeSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
-/** GET /api/v1/employees - daftar pegawai (status ready / tidak ready) */
 export const listEmployees = async (_req: AuthRequest, res: Response) => {
   const rows = await query("SELECT * FROM employees ORDER BY is_ready DESC, name ASC");
   return success(res, rows, "Data pegawai berhasil diambil");
 };
 
-/** POST /api/v1/employees (admin) */
 export const createEmployee = async (req: AuthRequest, res: Response) => {
   try {
     const data = employeeSchema.parse(req.body);
@@ -28,7 +26,6 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** PATCH /api/v1/employees/:id (admin) - ubah data / set ready atau tidak */
 export const updateEmployee = async (req: AuthRequest, res: Response) => {
   try {
     const existing: any = await queryOne("SELECT * FROM employees WHERE id = ?", [req.params.id]);
@@ -56,7 +53,6 @@ export const updateEmployee = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** DELETE /api/v1/employees/:id (admin) */
 export const deleteEmployee = async (req: AuthRequest, res: Response) => {
   const existing: any = await queryOne("SELECT id FROM employees WHERE id = ?", [req.params.id]);
   if (!existing) return notFound("Pegawai tidak ditemukan");

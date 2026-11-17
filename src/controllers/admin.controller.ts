@@ -1,10 +1,9 @@
 import { Response } from "express";
-import { query, queryOne, todayWib } from "../config/database";
+import { query, queryOne, todayWib, withTransaction } from "../config/database";
 import { success } from "../utils/response";
-import { notFound } from "../utils/httpError";
+import { notFound, badRequest } from "../utils/httpError";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
-/** GET /api/v1/admin/dashboard (admin) */
 export const dashboard = async (_req: AuthRequest, res: Response) => {
   const today = todayWib();
   const [users]: any[] = await query("SELECT COUNT(*) AS total FROM users WHERE role = 'USER'");
@@ -34,7 +33,6 @@ export const dashboard = async (_req: AuthRequest, res: Response) => {
   }, "Dashboard berhasil diambil");
 };
 
-/** GET /api/v1/admin/users (admin) */
 export const listUsers = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     `SELECT id, full_name, email, phone, role, is_verified, photo_url, balance, created_at
@@ -44,7 +42,6 @@ export const listUsers = async (_req: AuthRequest, res: Response) => {
   return success(res, rows, "Data semua user berhasil diambil");
 };
 
-/** GET /api/v1/admin/transactions (admin) - semua perubahan saldo */
 export const listTransactions = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     `SELECT wt.*, u.full_name, u.email
@@ -59,7 +56,6 @@ export const listTransactions = async (_req: AuthRequest, res: Response) => {
   return success(res, rows, "Semua transaksi berhasil diambil");
 };
 
-/** GET /api/v1/admin/payments (admin) - riwayat pembayaran top up DANA */
 export const listPayments = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
     `SELECT t.*, u.full_name, u.email
@@ -70,7 +66,54 @@ export const listPayments = async (_req: AuthRequest, res: Response) => {
   return success(res, rows, "Riwayat pembayaran berhasil diambil");
 };
 
-/** GET /api/v1/admin/revenue (admin) - laporan pendapatan per bulan */
+export const verifyTopUp = async (req: AuthRequest, res: Response) => {
+  const action = String(req.body?.action || "").toUpperCase();
+  const note = (req.body?.note as string) || null;
+  if (!["ACCEPT", "REJECT"].includes(action)) {
+    return badRequest("action wajib 'ACCEPT' atau 'REJECT'");
+  }
+  if (action === "REJECT" && !note) {
+    return badRequest("Catatan wajib diisi saat menolak bukti");
+  }
+
+  const topup: any = await queryOne("SELECT * FROM top_ups WHERE id = ?", [req.params.id]);
+  if (!topup) return notFound("Top up tidak ditemukan");
+  if (topup.status === "PAID") return badRequest("Top up ini sudah disetujui sebelumnya");
+  if (topup.status !== "WAITING_CONFIRM") {
+    return badRequest("Top up belum mengirim bukti pembayaran");
+  }
+
+  if (action === "REJECT") {
+    await query(
+      "UPDATE top_ups SET status = 'REJECTED', admin_note = ? WHERE id = ?",
+      [note, topup.id]
+    );
+    return success(res, { top_up_id: topup.id, status: "REJECTED" }, "Bukti ditolak, user bisa upload ulang");
+  }
+
+  await withTransaction(async (conn) => {
+    const [locked]: any = await conn.query("SELECT status FROM top_ups WHERE id = ? FOR UPDATE", [topup.id]);
+    if (locked[0].status === "PAID") return;
+
+    const [userRow]: any = await conn.query("SELECT balance FROM users WHERE id = ? FOR UPDATE", [topup.user_id]);
+    const before = Number(userRow[0].balance);
+    const after = before + Number(topup.amount);
+
+    await conn.query(
+      "UPDATE top_ups SET status = 'PAID', paid_at = NOW(), admin_note = COALESCE(?, admin_note) WHERE id = ?",
+      [note, topup.id]
+    );
+    await conn.query("UPDATE users SET balance = ? WHERE id = ?", [after, topup.user_id]);
+    await conn.query(
+      `INSERT INTO wallet_transactions (user_id, type, amount, balance_before, balance_after, reference_type, reference_id, description)
+       VALUES (?, 'TOPUP', ?, ?, ?, 'TOPUP', ?, ?)`,
+      [topup.user_id, topup.amount, before, after, topup.id, `Top up saldo via QRIS (${topup.reference}) - diverifikasi ${req.user?.role === "CASHIER" ? "kasir" : "admin"}`]
+    );
+  });
+
+  return success(res, { top_up_id: topup.id, status: "PAID" }, "Pembayaran disetujui, saldo user bertambah");
+};
+
 export const revenueReport = async (_req: AuthRequest, res: Response) => {
   const bookingRevenue = await query(
     `SELECT DATE_FORMAT(paid_at, '%Y-%m') AS month, SUM(total_price) AS booking_revenue, COUNT(*) AS bookings
@@ -84,7 +127,6 @@ export const revenueReport = async (_req: AuthRequest, res: Response) => {
   return success(res, { booking: bookingRevenue, product: productRevenue }, "Laporan pendapatan berhasil diambil");
 };
 
-/** GET /api/v1/admin/users/:id (admin) - profil + log user: booking (udh bayar/blm), topup, transaksi saldo */
 export const getUserDetail = async (req: AuthRequest, res: Response) => {
   const user: any = await queryOne(
     `SELECT id, full_name, email, phone, role, is_verified, photo_url, balance, created_at
@@ -127,7 +169,6 @@ export const getUserDetail = async (req: AuthRequest, res: Response) => {
   return success(res, { user, bookings, topups, transactions }, "Detail user berhasil diambil");
 };
 
-/** GET /api/v1/admin/revenue/daily (admin) - log terjual/terpakai hari ini (IDR) */
 export const dailyReport = async (req: AuthRequest, res: Response) => {
   const date = (req.query.date as string) || todayWib();
 

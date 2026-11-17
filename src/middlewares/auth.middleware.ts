@@ -6,7 +6,6 @@ export interface AuthRequest extends Request {
   user?: { id: number; email: string; role: string };
 }
 
-/** Wajib login (Bearer token) */
 export const authenticate = (
   req: AuthRequest,
   res: Response,
@@ -25,14 +24,13 @@ export const authenticate = (
   }
 };
 
-/** Wajib role ADMIN */
-export const requireAdmin = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  if (!req.user) return fail(res, "Token tidak ditemukan", 401);
-  if (req.user.role !== "ADMIN")
-    return fail(res, "Endpoint ini khusus admin", 403);
-  next();
-};
+export const requireRole =
+  (...roles: string[]) =>
+  (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) return fail(res, "Token tidak ditemukan", 401);
+    if (!roles.includes(req.user.role))
+      return fail(res, "Kamu tidak punya akses ke endpoint ini", 403);
+    next();
+  };
+
+export const requireAdmin = requireRole("ADMIN");
