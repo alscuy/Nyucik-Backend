@@ -31,12 +31,16 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       return fail(res, `Mesin ${machine.code} sedang dipakai, pilih mesin lain`, 409);
     }
 
-    let photoBeforeUrl: string | null = null;
-    if (req.file) {
-      photoBeforeUrl = (await uploadImage(req.file.buffer, FOLDERS.photoBefore)).url;
-    } else if (data.machine_type === "WASHING") {
-      return fail(res, "Foto cucian yang mau dicuci wajib diupload (field: photo)", 400);
+    if (!req.file) {
+      return fail(
+        res,
+        data.machine_type === "WASHING"
+          ? "Foto cucian yang mau dicuci wajib diupload (field: photo)"
+          : "Foto cucian yang mau dikeringkan wajib diupload (field: photo)",
+        400
+      );
     }
+    const photoBeforeUrl = (await uploadImage(req.file.buffer, FOLDERS.photoBefore)).url;
 
     const startTime = nowWibTime();
     const endTime = addMinutesToTime(startTime, DURATION_MINUTES);
