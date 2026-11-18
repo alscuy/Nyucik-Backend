@@ -2,7 +2,6 @@ import { Response } from "express";
 import bcrypt from "bcryptjs";
 import { pool, query, queryOne } from "../config/database";
 import { success, fail } from "../utils/response";
-import { badRequest, notFound } from "../utils/http-error";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { updateProfileSchema, changePasswordSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";

@@ -9,7 +9,7 @@ beli produk, saldo, dan top up QRIS.
 - MySQL (Aiven) — SSL required
 - JWT (1 token, expired 1d), Bcrypt, OTP email via Nodemailer
 - Cloudinary (foto laundry, mesin, produk, pengumuman, profil)
-- QRIS statis dinamis + simulasi pembayaran (tanpa payment gateway)
+- QRIS DANA MPM (partner API) + simulator fallback (tanpa payment gateway)
 - Zod (validasi), Helmet, CORS
 
 ## Setup
@@ -38,13 +38,43 @@ Base URL: `http://localhost:3000/api/v1`
 | Auth | `POST /auth/register`, `POST /auth/verify-otp`, `POST /auth/resend-otp`, `POST /auth/login`, `POST /auth/logout` |
 | Profil | `GET/PATCH /users/me`, `PATCH /users/me/password`, `GET /users/me/transactions` |
 | Saldo | `GET /wallet/balance`, `GET /wallet/transactions` |
-| Top up | `POST /wallet/topup`, `GET /wallet/topups`, `POST /wallet/topups/:id/simulate` |
+| Top up | `POST /wallet/topup`, `GET /wallet/topups`, `POST /wallet/topups/:id/pay` |
 | Mesin | `GET/POST/PATCH/DELETE /machines/washing-machines`, `GET/POST/PATCH/DELETE /machines/drying-machines` |
 | Laundry | `POST /bookings`, `GET /bookings/my`, `GET /bookings/:id`, `POST /bookings/:id/pay`, `POST /bookings/:id/start`, `POST /bookings/:id/cancel` |
 | Produk | `GET /products`, `POST /products/orders`, `GET /products/orders/my`, `POST /products/orders/:id/complete` |
 | Pengumuman | `GET /announcements`, `GET /announcements/admin/all`, `POST/PATCH/DELETE /announcements` |
 | Petugas | `GET /employees`, `POST/PATCH/DELETE /employees` |
 | Admin | `GET /admin/dashboard`, `GET /admin/users`, `GET /admin/users/:id`, `GET /admin/transactions` |
+
+## Top Up QRIS
+
+Top up punya dua mode:
+
+1. **DANA MPM (uang beneran)** — aktif kalau `DANA_CLIENT_ID`, `DANA_PARTNER_ID`,
+   `DANA_MERCHANT_ID`, dan `DANA_PRIVATE_KEY` terisi. Alur:
+   - `POST /wallet/topup` memanggil `qr-mpm-generate` dan mengembalikan `qrContent`.
+   - User scan QR di DANA/OVO/GoPay/bank, lalu tekan **Sudah Bayar**.
+   - Backend memanggil `debit/status`; kalau status `00`, saldo langsung masuk.
+   - DANA juga bisa mengirim notifikasi ke `POST /wallet/dana/notification`;
+     backend tetap mengecek ulang status ke DANA sebelum menambah saldo.
+2. **Simulator** — dipakai kalau kredensial DANA kosong. Tombol **Simulasi
+   Pembayaran** langsung menambah saldo (untuk demo).
+
+Isi `.env`:
+
+```env
+DANA_ENV=sandbox
+DANA_CLIENT_ID=...
+DANA_PARTNER_ID=...
+DANA_CHANNEL_ID=95221
+DANA_MERCHANT_ID=...
+DANA_STORE_ID=
+DANA_ORIGIN=https://nyucik-backend.vercel.app
+DANA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+```
+
+`DANA_ORIGIN` harus sama dengan origin yang didaftarkan saat onboarding partner.
+Set `DANA_ENV=production` untuk uang nyata.
 
 ## Deploy
 

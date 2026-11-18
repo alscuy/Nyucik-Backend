@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { pool, query, queryOne, withTransaction } from "../config/database";
 import { success, fail } from "../utils/response";
-import { badRequest, notFound, forbidden } from "../utils/http-error";
+import { badRequest, notFound } from "../utils/http-error";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { productSchema, purchaseSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";

@@ -152,16 +152,21 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   INDEX idx_wallet_ref (reference_type, reference_id)
 );
 
--- ---------------- TOP UPS (QRIS + simulasi pembayaran) ----------------
+-- ---------------- TOP UPS (QRIS DANA MPM / simulator) ----------------
 CREATE TABLE IF NOT EXISTS top_ups (
-  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id    INT UNSIGNED NOT NULL,
-  reference  VARCHAR(40) NOT NULL UNIQUE,
-  amount     DECIMAL(14,2) NOT NULL,
-  status     ENUM('PENDING','PAID','EXPIRED','FAILED') NOT NULL DEFAULT 'PENDING',
-  qr_string  TEXT NULL,
-  paid_at    DATETIME NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id       INT UNSIGNED NOT NULL,
+  reference     VARCHAR(40) NOT NULL UNIQUE,
+  amount        DECIMAL(14,2) NOT NULL,
+  status        ENUM('PENDING','PAID','EXPIRED','FAILED') NOT NULL DEFAULT 'PENDING',
+  qr_string     TEXT NULL,
+  provider      VARCHAR(20) NOT NULL DEFAULT 'STATIC',
+  provider_ref  VARCHAR(100) NULL,
+  provider_ext  VARCHAR(100) NULL,
+  provider_date VARCHAR(40) NULL,
+  expires_at    DATETIME NULL,
+  paid_at       DATETIME NULL,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_topups_user (user_id),
   INDEX idx_topups_status (status)

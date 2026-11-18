@@ -8,9 +8,6 @@ export class HttpError extends Error {
 }
 
 export const badRequest = (message: string) => new HttpError(400, message);
-export const unauthorized = (message = "Tidak memiliki akses, silakan login") =>
-  new HttpError(401, message);
 export const forbidden = (message = "Anda tidak memiliki hak akses") =>
   new HttpError(403, message);
 export const notFound = (message = "Data tidak ditemukan") => new HttpError(404, message);
-export const conflict = (message: string) => new HttpError(409, message);

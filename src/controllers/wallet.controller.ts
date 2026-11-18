@@ -3,7 +3,12 @@ import { Response } from "express";
 import { pool, query, queryOne, withTransaction } from "../config/database";
 import { success, fail } from "../utils/response";
 import { badRequest } from "../utils/http-error";
-import { createQris } from "../utils/dana.util";
+import {
+  checkDanaStatus,
+  createDanaQr,
+  createStaticQris,
+  danaEnabled,
+} from "../utils/dana.util";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
 export const getBalance = async (req: AuthRequest, res: Response) => {
@@ -26,20 +31,102 @@ export const getWalletTransactions = async (req: AuthRequest, res: Response) => 
   return success(res, rows, "Riwayat saldo berhasil diambil");
 };
 
+const creditTopUp = async (topUp: any) =>
+  withTransaction(async (conn) => {
+    const [locked]: any = await conn.query(
+      "SELECT status FROM top_ups WHERE id = ? FOR UPDATE",
+      [topUp.id]
+    );
+    if (locked[0].status === "PAID") {
+      const [current]: any = await conn.query("SELECT balance FROM users WHERE id = ?", [
+        topUp.user_id,
+      ]);
+      return { credited: false, balance: Number(current[0].balance) };
+    }
+
+    const [userRow]: any = await conn.query(
+      "SELECT balance FROM users WHERE id = ? FOR UPDATE",
+      [topUp.user_id]
+    );
+    const before = Number(userRow[0].balance);
+    const after = before + Number(topUp.amount);
+
+    await conn.query("UPDATE top_ups SET status = 'PAID', paid_at = NOW() WHERE id = ?", [
+      topUp.id,
+    ]);
+    await conn.query("UPDATE users SET balance = ? WHERE id = ?", [after, topUp.user_id]);
+    await conn.query(
+      `INSERT INTO wallet_transactions
+       (user_id, type, amount, balance_before, balance_after, reference_type, reference_id, description)
+       VALUES (?, 'TOPUP', ?, ?, ?, 'TOPUP', ?, ?)`,
+      [
+        topUp.user_id,
+        topUp.amount,
+        before,
+        after,
+        topUp.id,
+        `Top up saldo via QRIS (${topUp.reference})`,
+      ]
+    );
+    return { credited: true, balance: after };
+  });
+
 export const createTopUp = async (req: AuthRequest, res: Response) => {
   try {
     const amount = Number(req.body.amount);
     if (!amount || isNaN(amount)) return badRequest("Nominal top up wajib diisi");
     if (amount < 10000) return badRequest("Minimal top up Rp10.000");
 
-    const reference = "TOPUP-" + crypto.randomUUID().replace(/-/g, "").slice(0, 20).toUpperCase();
+    const reference =
+      "TOPUP-" + crypto.randomUUID().replace(/-/g, "").slice(0, 20).toUpperCase();
 
-    const qris = await createQris(amount, reference);
+    let provider = "STATIC";
+    let qrString: string | null = null;
+    let qrImage: string | null = null;
+    let providerRef: string | null = null;
+    let providerExt: string | null = null;
+    let providerDate: string | null = null;
+    let note = "";
+
+    if (danaEnabled()) {
+      try {
+        const qr = await createDanaQr(reference, amount);
+        provider = "DANA";
+        qrString = qr.qrContent;
+        providerRef = qr.referenceNo;
+        providerExt = qr.externalId;
+        providerDate = qr.transactionDate;
+        note = "QRIS DANA aktif, scan lalu tekan Sudah Bayar";
+      } catch (err: any) {
+        note = `QRIS DANA gagal (${err?.message || "error"}), memakai QRIS simulator`;
+      }
+    }
+
+    if (!qrString) {
+      const qris = await createStaticQris(amount, reference);
+      qrString = qris.qr_string;
+      qrImage = qris.qr_image;
+      if (!note) {
+        note = qris.qr_image
+          ? "QRIS berhasil dibuat, silakan scan lalu tekan Sudah Bayar"
+          : "QRIS dibuat dalam mode sandbox";
+      }
+    }
 
     const result: any = await pool.query(
-      `INSERT INTO top_ups (user_id, reference, amount, status, qr_string)
-       VALUES (?, ?, ?, 'PENDING', ?)`,
-      [req.user!.id, reference, amount, qris.qr_string]
+      `INSERT INTO top_ups
+       (user_id, reference, amount, status, qr_string, provider, provider_ref, provider_ext, provider_date)
+       VALUES (?, ?, ?, 'PENDING', ?, ?, ?, ?, ?)`,
+      [
+        req.user!.id,
+        reference,
+        amount,
+        qrString,
+        provider,
+        providerRef,
+        providerExt,
+        providerDate,
+      ]
     );
 
     return success(
@@ -48,14 +135,12 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
         top_up_id: result[0].insertId,
         reference,
         amount,
-        qris: qris.qr_string,
-        qr_image: qris.qr_image,
-        sandbox: qris.sandbox,
+        provider,
+        qris: qrString,
+        qr_image: qrImage,
         status: "PENDING",
       },
-      qris.qr_image
-        ? "QRIS berhasil dibuat, silakan scan lalu jalankan simulasi pembayaran"
-        : "QRIS dibuat dalam mode sandbox (QRIS_STATIC_PAYLOAD belum diisi)",
+      note,
       201
     );
   } catch (err: any) {
@@ -67,19 +152,32 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
 
 export const getTopUps = async (req: AuthRequest, res: Response) => {
   const rows = await query(
-    `SELECT id, reference, amount, status, qr_string, paid_at, created_at
+    `SELECT id, reference, amount, status, qr_string, provider, paid_at, created_at
      FROM top_ups WHERE user_id = ? ORDER BY created_at DESC`,
     [req.user!.id]
   );
-  rows.forEach((row: any) => { row.amount = Number(row.amount); });
+  rows.forEach((row: any) => {
+    row.amount = Number(row.amount);
+  });
   return success(res, rows, "Riwayat top up berhasil diambil");
 };
 
-export const simulateTopUpPayment = async (req: AuthRequest, res: Response) => {
-  const topUp: any = await queryOne(
-    "SELECT * FROM top_ups WHERE id = ? AND user_id = ?",
-    [req.params.id, req.user!.id]
-  );
+const verifyDanaPayment = async (topUp: any) => {
+  if (topUp.provider !== "DANA") return { paid: true, status: "STATIC", message: "Simulator" };
+  return checkDanaStatus({
+    partnerReferenceNo: topUp.reference,
+    referenceNo: topUp.provider_ref || "",
+    externalId: topUp.provider_ext,
+    transactionDate: topUp.provider_date || "",
+    amount: Number(topUp.amount),
+  });
+};
+
+export const payTopUp = async (req: AuthRequest, res: Response) => {
+  const topUp: any = await queryOne("SELECT * FROM top_ups WHERE id = ? AND user_id = ?", [
+    req.params.id,
+    req.user!.id,
+  ]);
   if (!topUp) return fail(res, "Top up tidak ditemukan", 404);
 
   if (topUp.status === "PAID") {
@@ -95,49 +193,43 @@ export const simulateTopUpPayment = async (req: AuthRequest, res: Response) => {
     return fail(res, "Top up ini tidak bisa dibayar", 409);
   }
 
-  const balance = await withTransaction(async (conn) => {
-    const [locked]: any = await conn.query(
-      "SELECT status FROM top_ups WHERE id = ? FOR UPDATE",
-      [topUp.id]
-    );
-    if (locked[0].status === "PAID") {
-      const [current]: any = await conn.query("SELECT balance FROM users WHERE id = ?", [
-        topUp.user_id,
-      ]);
-      return Number(current[0].balance);
+  if (topUp.provider === "DANA") {
+    const check = await verifyDanaPayment(topUp);
+    if (!check.paid) {
+      return fail(
+        res,
+        `Pembayaran belum masuk (${check.status || "-"}: ${check.message}). ` +
+          "Selesaikan pembayaran QRIS lalu tekan Sudah Bayar lagi.",
+        409
+      );
     }
+  }
 
-    const [userRow]: any = await conn.query(
-      "SELECT balance FROM users WHERE id = ? FOR UPDATE",
-      [topUp.user_id]
-    );
-    const before = Number(userRow[0].balance);
-    const after = before + Number(topUp.amount);
-
-    await conn.query(
-      "UPDATE top_ups SET status = 'PAID', paid_at = NOW() WHERE id = ?",
-      [topUp.id]
-    );
-    await conn.query("UPDATE users SET balance = ? WHERE id = ?", [after, topUp.user_id]);
-    await conn.query(
-      `INSERT INTO wallet_transactions
-       (user_id, type, amount, balance_before, balance_after, reference_type, reference_id, description)
-       VALUES (?, 'TOPUP', ?, ?, ?, 'TOPUP', ?, ?)`,
-      [
-        topUp.user_id,
-        topUp.amount,
-        before,
-        after,
-        topUp.id,
-        `Top up saldo via QRIS (${topUp.reference})`,
-      ]
-    );
-    return after;
-  });
-
+  const result = await creditTopUp(topUp);
   return success(
     res,
-    { top_up_id: topUp.id, status: "PAID", balance },
-    "Pembayaran QRIS berhasil, saldo bertambah"
+    { top_up_id: topUp.id, status: "PAID", balance: result.balance },
+    result.credited ? "Pembayaran berhasil, saldo bertambah" : "Top up ini sudah dibayar"
   );
+};
+
+export const danaNotification = async (req: AuthRequest, res: Response) => {
+  const body: any = req.body || {};
+  const partnerReferenceNo = String(
+    body.originalPartnerReferenceNo || body.partnerReferenceNo || body.merchantReferenceNo || ""
+  );
+
+  if (!danaEnabled() || !partnerReferenceNo) {
+    return fail(res, "Notifikasi tidak valid", 401);
+  }
+
+  const topUp: any = await queryOne("SELECT * FROM top_ups WHERE reference = ?", [
+    partnerReferenceNo,
+  ]);
+  if (!topUp) return success(res, null, "Notifikasi diterima");
+
+  const check = await verifyDanaPayment(topUp);
+  if (check.paid) await creditTopUp(topUp);
+
+  return success(res, null, "Notifikasi diproses");
 };
