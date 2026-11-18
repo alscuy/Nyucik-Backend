@@ -48,17 +48,23 @@ Base URL: `http://localhost:3000/api/v1`
 
 ## Top Up QRIS
 
-Top up punya dua mode:
+Top up punya tiga mode:
 
-1. **DANA MPM (uang beneran)** — aktif kalau `DANA_CLIENT_ID`, `DANA_PARTNER_ID`,
-   `DANA_MERCHANT_ID`, dan `DANA_PRIVATE_KEY` terisi. Alur:
+1. **DANA MPM (uang beneran, terverifikasi)** — aktif kalau `DANA_CLIENT_ID`,
+   `DANA_PARTNER_ID`, `DANA_MERCHANT_ID`, dan `DANA_PRIVATE_KEY` terisi. Alur:
    - `POST /wallet/topup` memanggil `qr-mpm-generate` dan mengembalikan `qrContent`.
    - User scan QR di DANA/OVO/GoPay/bank, lalu tekan **Sudah Bayar**.
    - Backend memanggil `debit/status`; kalau status `00`, saldo langsung masuk.
    - DANA juga bisa mengirim notifikasi ke `POST /wallet/dana/notification`;
      backend tetap mengecek ulang status ke DANA sebelum menambah saldo.
-2. **Simulator** — dipakai kalau kredensial DANA kosong. Tombol **Simulasi
-   Pembayaran** langsung menambah saldo (untuk demo).
+2. **QRIS toko (uang beneran, tanpa API)** — aktif kalau `QRIS_STATIC_PAYLOAD`
+   diisi payload QRIS statis milik sendiri (mis. QRIS DANA pribadi yang auto
+   accept). Backend menyisipkan nominal ke payload sehingga pembeli membayar
+   pas. Uang masuk ke rekening QRIS toko, lalu tombol **Sudah Bayar** menambah
+   saldo. Tidak ada verifikasi otomatis, jadi mode ini cocok untuk demo/outlet
+   kecil dengan nominal terbatas.
+3. **Simulator** — dipakai kalau `QRIS_STATIC_PAYLOAD` dan kredensial DANA
+   kosong. Tombol **Simulasi Pembayaran** langsung menambah saldo (untuk demo).
 
 Isi `.env`:
 
@@ -71,6 +77,9 @@ DANA_MERCHANT_ID=...
 DANA_STORE_ID=
 DANA_ORIGIN=https://nyucik-backend.vercel.app
 DANA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+
+# Alternatif tanpa API DANA: payload QRIS statis milik sendiri
+QRIS_STATIC_PAYLOAD=00020101021126...
 ```
 
 `DANA_ORIGIN` harus sama dengan origin yang didaftarkan saat onboarding partner.

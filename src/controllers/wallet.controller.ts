@@ -106,10 +106,11 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
       const qris = await createStaticQris(amount, reference);
       qrString = qris.qr_string;
       qrImage = qris.qr_image;
+      if (!qris.sandbox) provider = "QRIS";
       if (!note) {
-        note = qris.qr_image
-          ? "QRIS berhasil dibuat, silakan scan lalu tekan Sudah Bayar"
-          : "QRIS dibuat dalam mode sandbox";
+        note = qris.sandbox
+          ? "QRIS dibuat dalam mode sandbox"
+          : "QRIS toko aktif, scan lalu tekan Sudah Bayar";
       }
     }
 
@@ -163,7 +164,9 @@ export const getTopUps = async (req: AuthRequest, res: Response) => {
 };
 
 const verifyDanaPayment = async (topUp: any) => {
-  if (topUp.provider !== "DANA") return { paid: true, status: "STATIC", message: "Simulator" };
+  if (topUp.provider !== "DANA") {
+    return { paid: true, status: topUp.provider, message: "Tanpa verifikasi otomatis" };
+  }
   return checkDanaStatus({
     partnerReferenceNo: topUp.reference,
     referenceNo: topUp.provider_ref || "",

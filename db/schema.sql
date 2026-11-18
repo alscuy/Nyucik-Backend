@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   INDEX idx_wallet_ref (reference_type, reference_id)
 );
 
--- ---------------- TOP UPS (QRIS DANA MPM / simulator) ----------------
+-- ---------------- TOP UPS (QRIS DANA MPM / QRIS toko / simulator) ----------------
 CREATE TABLE IF NOT EXISTS top_ups (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id       INT UNSIGNED NOT NULL,
