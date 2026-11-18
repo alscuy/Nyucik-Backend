@@ -21,6 +21,5 @@ export const FOLDERS = {
   machines: "nyucik/machines",
   products: "nyucik/products",
   announcements: "nyucik/announcements",
-  topUps: "nyucik/topups",
   profiles: "nyucik/profiles",
 };

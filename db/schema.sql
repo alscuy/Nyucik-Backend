@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   email            VARCHAR(120) NOT NULL UNIQUE,
   phone            VARCHAR(20) NOT NULL,
   password         VARCHAR(255) NOT NULL,
-  role             ENUM('USER','ADMIN','CASHIER') NOT NULL DEFAULT 'USER',
+  role             ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER',
   is_verified      TINYINT(1) NOT NULL DEFAULT 0,
   photo_url        VARCHAR(500) NULL,
   balance          DECIMAL(14,2) NOT NULL DEFAULT 0.00,
@@ -135,17 +135,6 @@ CREATE TABLE IF NOT EXISTS employees (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- ---------------- EXPENSES (pengeluaran operasional) ----------------
-CREATE TABLE IF NOT EXISTS expenses (
-  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  title        VARCHAR(150) NOT NULL,
-  amount       DECIMAL(14,2) NOT NULL,
-  expense_date DATE NOT NULL,
-  description  TEXT NULL,
-  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
 -- ---------------- WALLET TRANSACTIONS ----------------
 CREATE TABLE IF NOT EXISTS wallet_transactions (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -163,17 +152,14 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   INDEX idx_wallet_ref (reference_type, reference_id)
 );
 
--- ---------------- TOP UPS (QRIS + verifikasi manual kasir) ----------------
+-- ---------------- TOP UPS (QRIS + simulasi pembayaran) ----------------
 CREATE TABLE IF NOT EXISTS top_ups (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id    INT UNSIGNED NOT NULL,
   reference  VARCHAR(40) NOT NULL UNIQUE,
   amount     DECIMAL(14,2) NOT NULL,
-  status     ENUM('PENDING','WAITING_CONFIRM','PAID','REJECTED','EXPIRED','FAILED') NOT NULL DEFAULT 'PENDING',
+  status     ENUM('PENDING','PAID','EXPIRED','FAILED') NOT NULL DEFAULT 'PENDING',
   qr_string  TEXT NULL,
-  dana_ref   VARCHAR(100) NULL UNIQUE,
-  proof_url  TEXT NULL,
-  admin_note VARCHAR(255) NULL,
   paid_at    DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

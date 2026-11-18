@@ -6,10 +6,10 @@ export const announcementSchemaBase = z.object({
   content: z.string().min(3, "Konten wajib diisi"),
   start_date: z
     .string()
-    .regex(/^\data{4}-\data{2}-\data{2}$/, "Tanggal harus format YYYY-MM-DD"),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal harus format YYYY-MM-DD"),
   end_date: z
     .string()
-    .regex(/^\data{4}-\data{2}-\data{2}$/, "Tanggal harus format YYYY-MM-DD"),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal harus format YYYY-MM-DD"),
   is_active: booleanField.optional().default(true),
 });
 
@@ -26,13 +26,4 @@ export const employeeSchema = z.object({
   position: z.string().min(3, "Posisi wajib diisi"),
   phone: z.string().optional(),
   is_ready: booleanField.optional().default(true),
-});
-
-export const expenseSchema = z.object({
-  title: z.string().min(3, "Keterangan pengeluaran minimal 3 karakter"),
-  amount: z.coerce.number().positive("Nominal wajib diisi"),
-  expense_date: z
-    .string()
-    .regex(/^\data{4}-\data{2}-\data{2}$/, "Tanggal harus format YYYY-MM-DD"),
-  description: z.string().optional(),
 });

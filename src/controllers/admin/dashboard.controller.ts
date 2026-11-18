@@ -22,11 +22,9 @@ export const dashboard = async (_req: AuthRequest, res: Response) => {
   const [revenueProduct]: any[] = await query(
     "SELECT COALESCE(SUM(total_price), 0) AS total FROM product_orders"
   );
-  const [expenses]: any[] = await query("SELECT COALESCE(SUM(amount), 0) AS total FROM expenses");
 
   const booking = Number(revenueBooking.total);
   const product = Number(revenueProduct.total);
-  const totalExpenses = Number(expenses.total);
 
   return success(
     res,
@@ -39,8 +37,6 @@ export const dashboard = async (_req: AuthRequest, res: Response) => {
         booking,
         product,
         total: booking + product,
-        expenses: totalExpenses,
-        net: booking + product - totalExpenses,
       },
     },
     "Dashboard berhasil diambil"

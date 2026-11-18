@@ -16,15 +16,3 @@ export const listTransactions = async (_req: AuthRequest, res: Response) => {
   });
   return success(res, rows, "Semua transaksi berhasil diambil");
 };
-
-export const listPayments = async (_req: AuthRequest, res: Response) => {
-  const rows = await query(
-    `SELECT t.*, u.full_name, u.email
-     FROM top_ups t JOIN users u ON u.id = t.user_id
-     ORDER BY t.created_at DESC`
-  );
-  rows.forEach((row: any) => {
-    row.amount = Number(row.amount);
-  });
-  return success(res, rows, "Riwayat pembayaran berhasil diambil");
-};
