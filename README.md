@@ -48,27 +48,36 @@ Base URL: `http://localhost:3000/api/v1`
 
 ## Top Up QRIS
 
-Top up punya tiga mode:
+Top up punya empat mode, dipakai berurutan sesuai konfigurasi:
 
-1. **DANA MPM (uang beneran, terverifikasi)** — aktif kalau `DANA_CLIENT_ID`,
+1. **Saya Bayar (hosted invoice QRIS)** — aktif kalau `SAYABAYAR_API_KEY`
+   terisi. Backend membuat invoice QRIS, aplikasi membuka `payment_url`, lalu
+   halaman Saya Bayar menampilkan QRIS merchant sendiri. Setelah membayar,
+   tombol **Sudah Bayar** memanggil `GET /invoices/:id` + `POST /confirm`.
+   Webhook `invoice.paid` juga menambah saldo otomatis.
+2. **DANA MPM (uang beneran, terverifikasi)** — aktif kalau `DANA_CLIENT_ID`,
    `DANA_PARTNER_ID`, `DANA_MERCHANT_ID`, dan `DANA_PRIVATE_KEY` terisi. Alur:
    - `POST /wallet/topup` memanggil `qr-mpm-generate` dan mengembalikan `qrContent`.
    - User scan QR di DANA/OVO/GoPay/bank, lalu tekan **Sudah Bayar**.
    - Backend memanggil `debit/status`; kalau status `00`, saldo langsung masuk.
    - DANA juga bisa mengirim notifikasi ke `POST /wallet/dana/notification`;
      backend tetap mengecek ulang status ke DANA sebelum menambah saldo.
-2. **QRIS toko (uang beneran, tanpa API)** — aktif kalau `QRIS_STATIC_PAYLOAD`
+3. **QRIS toko (uang beneran, tanpa API)** — aktif kalau `QRIS_STATIC_PAYLOAD`
    diisi payload QRIS statis milik sendiri (mis. QRIS DANA pribadi yang auto
    accept). Backend menyisipkan nominal ke payload sehingga pembeli membayar
    pas. Uang masuk ke rekening QRIS toko, lalu tombol **Sudah Bayar** menambah
    saldo. Tidak ada verifikasi otomatis, jadi mode ini cocok untuk demo/outlet
    kecil dengan nominal terbatas.
-3. **Simulator** — dipakai kalau `QRIS_STATIC_PAYLOAD` dan kredensial DANA
-   kosong. Tombol **Simulasi Pembayaran** langsung menambah saldo (untuk demo).
+4. **Simulator** — dipakai kalau semua konfigurasi di atas kosong. Tombol
+   **Simulasi Pembayaran** langsung menambah saldo (untuk demo).
 
 Isi `.env`:
 
 ```env
+SAYABAYAR_BASE_URL=https://api.sayabayar.com/v1
+SAYABAYAR_API_KEY=sk_live_...
+SAYABAYAR_WEBHOOK_SECRET=whsec_...
+
 DANA_ENV=sandbox
 DANA_CLIENT_ID=...
 DANA_PARTNER_ID=...
@@ -78,12 +87,33 @@ DANA_STORE_ID=
 DANA_ORIGIN=https://nyucik-backend.vercel.app
 DANA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 
-# Alternatif tanpa API DANA: payload QRIS statis milik sendiri
+# Alternatif tanpa API: payload QRIS statis milik sendiri
 QRIS_STATIC_PAYLOAD=00020101021126...
 ```
 
 `DANA_ORIGIN` harus sama dengan origin yang didaftarkan saat onboarding partner.
 Set `DANA_ENV=production` untuk uang nyata.
+
+### Webhook Saya Bayar
+
+Daftarkan URL ini di dashboard Saya Bayar:
+
+```text
+https://nyucik-backend.vercel.app/api/v1/wallet/sayabayar/notification
+```
+
+Backend memakai raw body + HMAC-SHA256 (`X-Webhook-Signature`) dengan
+`SAYABAYAR_WEBHOOK_SECRET`. Event yang ditangani: `invoice.paid`,
+`invoice.expired`, dan `invoice.cancelled`. Saldo hanya ditambah setelah status
+invoice dicek ulang ke API.
+
+Uji manual:
+
+```bash
+npx ts-node scripts/test-sayabayar.ts 10000
+npx ts-node scripts/test-sayabayar.ts check <id>
+npx ts-node scripts/test-sayabayar.ts confirm <id>
+```
 
 ## Deploy
 

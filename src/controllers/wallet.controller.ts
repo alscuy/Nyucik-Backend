@@ -9,6 +9,15 @@ import {
   createStaticQris,
   danaEnabled,
 } from "../utils/dana.util";
+import {
+  confirmSayabayarInvoice,
+  createSayabayarInvoice,
+  getSayabayarInvoice,
+  isPaidStatus,
+  sayabayarEnabled,
+  verifyWebhook,
+  webhookEnabled,
+} from "../utils/sayabayar.util";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
 export const getBalance = async (req: AuthRequest, res: Response) => {
@@ -83,6 +92,7 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
     let provider = "STATIC";
     let qrString: string | null = null;
     let qrImage: string | null = null;
+    let paymentUrl: string | null = null;
     let providerRef: string | null = null;
     let providerExt: string | null = null;
     let providerDate: string | null = null;
@@ -102,7 +112,29 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    if (!qrString) {
+    if (!qrString && sayabayarEnabled()) {
+      try {
+        const user: any = await queryOne(
+          "SELECT name, email FROM users WHERE id = ?",
+          [req.user!.id]
+        );
+        const invoice = await createSayabayarInvoice({
+          reference,
+          amount,
+          name: user?.name || "Pengguna Nyucik",
+          email: user?.email || req.user!.email,
+        });
+        provider = "SAYABAYAR";
+        providerRef = invoice.id;
+        providerExt = invoice.invoiceNumber || null;
+        paymentUrl = invoice.paymentUrl;
+        note = "Halaman pembayaran aktif, buka lalu tekan Sudah Bayar";
+      } catch (err: any) {
+        note = `Sayabayar gagal (${err?.message || "error"}), memakai QRIS toko`;
+      }
+    }
+
+    if (!qrString && !paymentUrl) {
       const qris = await createStaticQris(amount, reference);
       qrString = qris.qr_string;
       qrImage = qris.qr_image;
@@ -116,13 +148,14 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
 
     const result: any = await pool.query(
       `INSERT INTO top_ups
-       (user_id, reference, amount, status, qr_string, provider, provider_ref, provider_ext, provider_date)
-       VALUES (?, ?, ?, 'PENDING', ?, ?, ?, ?, ?)`,
+       (user_id, reference, amount, status, qr_string, payment_url, provider, provider_ref, provider_ext, provider_date)
+       VALUES (?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)`,
       [
         req.user!.id,
         reference,
         amount,
         qrString,
+        paymentUrl,
         provider,
         providerRef,
         providerExt,
@@ -139,6 +172,7 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
         provider,
         qris: qrString,
         qr_image: qrImage,
+        payment_url: paymentUrl,
         status: "PENDING",
       },
       note,
@@ -153,7 +187,7 @@ export const createTopUp = async (req: AuthRequest, res: Response) => {
 
 export const getTopUps = async (req: AuthRequest, res: Response) => {
   const rows = await query(
-    `SELECT id, reference, amount, status, qr_string, provider, paid_at, created_at
+    `SELECT id, reference, amount, status, qr_string, payment_url, provider, paid_at, created_at
      FROM top_ups WHERE user_id = ? ORDER BY created_at DESC`,
     [req.user!.id]
   );
@@ -208,6 +242,25 @@ export const payTopUp = async (req: AuthRequest, res: Response) => {
     }
   }
 
+  if (topUp.provider === "SAYABAYAR") {
+    if (!topUp.provider_ref) {
+      return fail(res, "Invoice Sayabayar tidak ditemukan", 409);
+    }
+    let invoice = await getSayabayarInvoice(topUp.provider_ref);
+    if (!isPaidStatus(invoice.status)) {
+      await confirmSayabayarInvoice(topUp.provider_ref);
+      invoice = await getSayabayarInvoice(topUp.provider_ref);
+    }
+    if (!isPaidStatus(invoice.status)) {
+      return fail(
+        res,
+        `Pembayaran belum masuk (status: ${invoice.status || "pending"}). ` +
+          "Selesaikan pembayaran lalu tekan Sudah Bayar lagi.",
+        409
+      );
+    }
+  }
+
   const result = await creditTopUp(topUp);
   return success(
     res,
@@ -235,4 +288,58 @@ export const danaNotification = async (req: AuthRequest, res: Response) => {
   if (check.paid) await creditTopUp(topUp);
 
   return success(res, null, "Notifikasi diproses");
+};
+
+export const sayabayarNotification = async (req: AuthRequest, res: Response) => {
+  try {
+    const raw = Buffer.isBuffer(req.body) ? req.body.toString("utf8") : "";
+    const signature = String(req.headers["x-webhook-signature"] || "");
+
+    if (!raw || !webhookEnabled() || !verifyWebhook(raw, signature)) {
+      return fail(res, "Signature webhook tidak valid", 401);
+    }
+
+    const body: any = JSON.parse(raw);
+    const event = String(body.event || "");
+    const data: any = body.data || {};
+    const keys = [
+      data.id,
+      data.invoice_id,
+      data.invoice_number,
+      data.external_id,
+    ]
+      .filter((value) => value !== undefined && value !== null && `${value}`.length > 0)
+      .map(String);
+
+    if (keys.length === 0) return success(res, null, "Notifikasi diterima");
+
+    const marks = keys.map(() => "?").join(",");
+    const topUp: any = await queryOne(
+      `SELECT * FROM top_ups WHERE provider = 'SAYABAYAR'
+       AND (provider_ref IN (${marks}) OR provider_ext IN (${marks}))
+       ORDER BY id DESC LIMIT 1`,
+      [...keys, ...keys]
+    );
+    if (!topUp) return success(res, null, "Notifikasi diterima");
+
+    if (event === "invoice.paid") {
+      const invoice = await getSayabayarInvoice(topUp.provider_ref || keys[0]);
+      if (isPaidStatus(invoice.status)) await creditTopUp(topUp);
+    } else if (event === "invoice.expired") {
+      await query(
+        "UPDATE top_ups SET status = 'EXPIRED' WHERE id = ? AND status = 'PENDING'",
+        [topUp.id]
+      );
+    } else if (event === "invoice.cancelled") {
+      await query(
+        "UPDATE top_ups SET status = 'FAILED' WHERE id = ? AND status = 'PENDING'",
+        [topUp.id]
+      );
+    }
+
+    return success(res, null, "Notifikasi diproses");
+  } catch (err: any) {
+    console.error(err);
+    return fail(res, "Gagal memproses notifikasi", 500);
+  }
 };
