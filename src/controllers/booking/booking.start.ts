@@ -24,7 +24,7 @@ export const startLaundry = async (req: AuthRequest, res: Response) => {
   const image = await uploadImage(req.file.buffer, FOLDERS.photoStart);
   const startTime = nowWibTime();
   const endTime = addMinutesToTime(startTime, DURATION_MINUTES);
-  const { col, table } = machineInfo(booking);
+  const { machineColumn, table } = machineInfo(booking);
 
   await withTransaction(async (conn) => {
     await conn.query(
@@ -34,7 +34,7 @@ export const startLaundry = async (req: AuthRequest, res: Response) => {
        WHERE id = ?`,
       [image.url, todayWib(), startTime, endTime, booking.id]
     );
-    await conn.query(`UPDATE ${table} SET status = 'IN_USE' WHERE id = ?`, [booking[col]]);
+    await conn.query(`UPDATE ${table} SET status = 'IN_USE' WHERE id = ?`, [booking[machineColumn]]);
   });
 
   return success(

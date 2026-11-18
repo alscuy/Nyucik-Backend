@@ -4,8 +4,8 @@ export const DURATION_MINUTES = 25;
 
 export const machineInfo = (booking: { machine_type?: string }) =>
   booking.machine_type === "WASHING"
-    ? { col: "washing_machine_id", table: "washing_machines" }
-    : { col: "drying_machine_id", table: "drying_machines" };
+    ? { machineColumn: "washing_machine_id", table: "washing_machines" }
+    : { machineColumn: "drying_machine_id", table: "drying_machines" };
 
 export const toMinutes = (time: string): number => {
   const [hours, minutes] = time.split(":").map(Number);
@@ -58,12 +58,12 @@ export const finishDueLaundry = async () => {
 
   await withTransaction(async (conn) => {
     for (const booking of due) {
-      const { col, table } = machineInfo(booking);
+      const { machineColumn, table } = machineInfo(booking);
       await conn.query(
         "UPDATE bookings SET status = 'COMPLETED', finished_at = NOW() WHERE id = ?",
         [booking.id]
       );
-      await conn.query(`UPDATE ${table} SET status = 'AVAILABLE' WHERE id = ?`, [booking[col]]);
+      await conn.query(`UPDATE ${table} SET status = 'AVAILABLE' WHERE id = ?`, [booking[machineColumn]]);
     }
   });
 };

@@ -14,7 +14,7 @@ import {
 export const createBooking = async (req: AuthRequest, res: Response) => {
   try {
     const data = createBookingSchema.parse(req.body);
-    const { col, table } = machineInfo(data);
+    const { machineColumn, table } = machineInfo(data);
     const machine: any = await queryOne(`SELECT * FROM ${table} WHERE id = ?`, [data.machine_id]);
 
     if (!machine) return fail(res, "Mesin tidak ditemukan", 404);
@@ -24,7 +24,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 
     const active: any = await queryOne(
       `SELECT id FROM bookings
-       WHERE ${col} = ? AND status IN ('PENDING','CONFIRMED','IN_PROGRESS') LIMIT 1`,
+       WHERE ${machineColumn} = ? AND status IN ('PENDING','CONFIRMED','IN_PROGRESS') LIMIT 1`,
       [data.machine_id]
     );
     if (active) {

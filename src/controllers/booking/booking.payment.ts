@@ -12,7 +12,7 @@ export const payBooking = async (req: AuthRequest, res: Response) => {
     return fail(res, `Laundry sudah berstatus ${booking.status}, tidak bisa dibayar lagi`, 409);
   }
 
-  const { col, table } = machineInfo(booking);
+  const { machineColumn, table } = machineInfo(booking);
   try {
     const data = await withTransaction(async (conn) => {
       const [userRows]: any = await conn.query(
@@ -36,7 +36,7 @@ export const payBooking = async (req: AuthRequest, res: Response) => {
         "UPDATE bookings SET status = 'CONFIRMED', paid_at = NOW() WHERE id = ?",
         [booking.id]
       );
-      await conn.query(`UPDATE ${table} SET status = 'BOOKED' WHERE id = ?`, [booking[col]]);
+      await conn.query(`UPDATE ${table} SET status = 'BOOKED' WHERE id = ?`, [booking[machineColumn]]);
 
       return {
         booking_id: booking.id,
@@ -65,11 +65,11 @@ export const cancelBooking = async (req: AuthRequest, res: Response) => {
     return fail(res, `Laundry berstatus ${booking.status}, tidak bisa dibatalkan`, 409);
   }
 
-  const { col, table } = machineInfo(booking);
+  const { machineColumn, table } = machineInfo(booking);
   const data = await withTransaction(async (conn) => {
     const refund = await refundBooking(conn, booking, `Refund pembatalan laundry #${booking.id}`);
     await conn.query("UPDATE bookings SET status = 'CANCELLED' WHERE id = ?", [booking.id]);
-    await conn.query(`UPDATE ${table} SET status = 'AVAILABLE' WHERE id = ?`, [booking[col]]);
+    await conn.query(`UPDATE ${table} SET status = 'AVAILABLE' WHERE id = ?`, [booking[machineColumn]]);
     return { booking_id: booking.id, status: "CANCELLED", refunded: refund };
   });
 

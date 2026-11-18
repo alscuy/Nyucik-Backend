@@ -11,7 +11,7 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
     const booking: any = await queryOne("SELECT * FROM bookings WHERE id = ?", [req.params.id]);
     if (!booking) return fail(res, "Laundry tidak ditemukan", 404);
 
-    const { col, table } = machineInfo(booking);
+    const { machineColumn, table } = machineInfo(booking);
     const fields: string[] = ["status = ?"];
     const params: any[] = [status];
     if (status === "IN_PROGRESS" && !booking.started_at) {
@@ -23,9 +23,9 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
     await pool.query(`UPDATE bookings SET ${fields.join(", ")} WHERE id = ?`, [...params, booking.id]);
 
     if (["COMPLETED", "CANCELLED"].includes(status)) {
-      await pool.query(`UPDATE ${table} SET status = 'AVAILABLE' WHERE id = ?`, [booking[col]]);
+      await pool.query(`UPDATE ${table} SET status = 'AVAILABLE' WHERE id = ?`, [booking[machineColumn]]);
     } else if (status === "IN_PROGRESS") {
-      await pool.query(`UPDATE ${table} SET status = 'IN_USE' WHERE id = ?`, [booking[col]]);
+      await pool.query(`UPDATE ${table} SET status = 'IN_USE' WHERE id = ?`, [booking[machineColumn]]);
     }
     return success(res, { booking_id: booking.id, status }, "Status laundry diperbarui");
   } catch (err: any) {
@@ -39,11 +39,11 @@ export const deleteBooking = async (req: AuthRequest, res: Response) => {
   const booking: any = await queryOne("SELECT * FROM bookings WHERE id = ?", [req.params.id]);
   if (!booking) return fail(res, "Laundry tidak ditemukan", 404);
 
-  const { col, table } = machineInfo(booking);
+  const { machineColumn, table } = machineInfo(booking);
   const data = await withTransaction(async (conn) => {
     const refund = await refundBooking(conn, booking, `Refund hapus laundry #${booking.id} oleh admin`);
     await conn.query("DELETE FROM bookings WHERE id = ?", [booking.id]);
-    await conn.query(`UPDATE ${table} SET status = 'AVAILABLE' WHERE id = ?`, [booking[col]]);
+    await conn.query(`UPDATE ${table} SET status = 'AVAILABLE' WHERE id = ?`, [booking[machineColumn]]);
     return { booking_id: booking.id, deleted: true, refunded: refund };
   });
 
