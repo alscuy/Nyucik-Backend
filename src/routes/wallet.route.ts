@@ -5,7 +5,7 @@ import {
   createTopUp,
   getTopUps,
   payTopUp,
-  danaNotification,
+  simulateTopUp,
 } from "../controllers/wallet.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 
@@ -16,7 +16,7 @@ router.get("/transactions", authenticate, getWalletTransactions);
 router.post("/topup", authenticate, createTopUp);
 router.get("/topups", authenticate, getTopUps);
 router.post("/topups/:id/pay", authenticate, payTopUp);
-router.post("/topups/:id/simulate", authenticate, payTopUp);
-router.post("/dana/notification", danaNotification);
+router.post("/topups/:id/check", authenticate, payTopUp);
+router.post("/topups/:id/simulate", authenticate, simulateTopUp);
 
 export default router;

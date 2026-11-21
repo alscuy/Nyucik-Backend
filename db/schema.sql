@@ -1,11 +1,8 @@
 -- ============================================================
 -- NYUCIK - Self Service Laundry | MySQL Aiven Schema
 -- Jalankan: npm run migrate
--- Database 'nyucik_db' dibuat otomatis jika belum ada
+-- Database mengikuti DB_NAME di .env (sudah dibuat di Aiven)
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS nyucik_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE nyucik_db;
 
 -- ---------------- USERS ----------------
 CREATE TABLE IF NOT EXISTS users (
@@ -152,7 +149,7 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   INDEX idx_wallet_ref (reference_type, reference_id)
 );
 
--- ---------------- TOP UPS (QRIS DANA MPM / QRIS toko / simulator) ----------------
+-- ---------------- TOP UPS (QRIS KiPay) ----------------
 CREATE TABLE IF NOT EXISTS top_ups (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id       INT UNSIGNED NOT NULL,

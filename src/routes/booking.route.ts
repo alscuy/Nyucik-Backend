@@ -9,7 +9,7 @@ import {
   getAllBookings,
   updateBookingStatus,
   deleteBooking,
-} from "../controllers/booking";
+} from "../controllers/booking.controller";
 import { authenticate, requireAdmin } from "../middlewares/auth.middleware";
 import { upload } from "../middlewares/upload.middleware";
 

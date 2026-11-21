@@ -6,8 +6,6 @@
 --   USER  -> user@nyucik.com  / user123
 -- ============================================================
 
-USE nyucik_db;
-
 -- USERS (password sudah di-hash bcrypt)
 INSERT INTO users (full_name, email, phone, password, role, is_verified, balance)
 VALUES

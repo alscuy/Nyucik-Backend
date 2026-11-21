@@ -1,4 +1,4 @@
-# Nyucik Backend
+  # Nyucik Backend
 
 REST API **Nyucik** — aplikasi self-service laundry: pesan mesin cuci/pengering,
 beli produk, saldo, dan top up QRIS.
@@ -9,7 +9,7 @@ beli produk, saldo, dan top up QRIS.
 - MySQL (Aiven) — SSL required
 - JWT (1 token, expired 1d), Bcrypt, OTP email via Nodemailer
 - Cloudinary (foto laundry, mesin, produk, pengumuman, profil)
-- QRIS DANA MPM (partner API) + simulator fallback (tanpa payment gateway)
+- QRIS gateway KiPay (`api.kipay.biz.id`) — QR dinamis, cek status, simulasi sandbox
 - Zod (validasi), Helmet, CORS
 
 ## Setup
@@ -38,7 +38,7 @@ Base URL: `http://localhost:3000/api/v1`
 | Auth | `POST /auth/register`, `POST /auth/verify-otp`, `POST /auth/resend-otp`, `POST /auth/login`, `POST /auth/logout` |
 | Profil | `GET/PATCH /users/me`, `PATCH /users/me/password`, `GET /users/me/transactions` |
 | Saldo | `GET /wallet/balance`, `GET /wallet/transactions` |
-| Top up | `POST /wallet/topup`, `GET /wallet/topups`, `POST /wallet/topups/:id/pay` |
+| Top up | `POST /wallet/topup`, `GET /wallet/topups`, `POST /wallet/topups/:id/check`, `POST /wallet/topups/:id/simulate` |
 | Mesin | `GET/POST/PATCH/DELETE /machines/washing-machines`, `GET/POST/PATCH/DELETE /machines/drying-machines` |
 | Laundry | `POST /bookings`, `GET /bookings/my`, `GET /bookings/:id`, `POST /bookings/:id/pay`, `POST /bookings/:id/start`, `POST /bookings/:id/cancel` |
 | Produk | `GET /products`, `POST /products/orders`, `GET /products/orders/my`, `POST /products/orders/:id/complete` |
@@ -46,44 +46,33 @@ Base URL: `http://localhost:3000/api/v1`
 | Petugas | `GET /employees`, `POST/PATCH/DELETE /employees` |
 | Admin | `GET /admin/dashboard`, `GET /admin/users`, `GET /admin/users/:id`, `GET /admin/transactions` |
 
-## Top Up QRIS
+## Top Up QRIS (KiPay)
 
-Top up punya tiga mode:
+Top up memakai gateway **KiPay**:
 
-1. **DANA MPM (uang beneran, terverifikasi)** — aktif kalau `DANA_CLIENT_ID`,
-   `DANA_PARTNER_ID`, `DANA_MERCHANT_ID`, dan `DANA_PRIVATE_KEY` terisi. Alur:
-   - `POST /wallet/topup` memanggil `qr-mpm-generate` dan mengembalikan `qrContent`.
-   - User scan QR di DANA/OVO/GoPay/bank, lalu tekan **Sudah Bayar**.
-   - Backend memanggil `debit/status`; kalau status `00`, saldo langsung masuk.
-   - DANA juga bisa mengirim notifikasi ke `POST /wallet/dana/notification`;
-     backend tetap mengecek ulang status ke DANA sebelum menambah saldo.
-2. **QRIS toko (uang beneran, tanpa API)** — aktif kalau `QRIS_STATIC_PAYLOAD`
-   diisi payload QRIS statis milik sendiri (mis. QRIS DANA pribadi yang auto
-   accept). Backend menyisipkan nominal ke payload sehingga pembeli membayar
-   pas. Uang masuk ke rekening QRIS toko, lalu tombol **Sudah Bayar** menambah
-   saldo. Tidak ada verifikasi otomatis, jadi mode ini cocok untuk demo/outlet
-   kecil dengan nominal terbatas.
-3. **Simulator** — dipakai kalau `QRIS_STATIC_PAYLOAD` dan kredensial DANA
-   kosong. Tombol **Simulasi Pembayaran** langsung menambah saldo (untuk demo).
+- `POST /wallet/topup` membuat transaksi QRIS sebesar nominal + kode unik, lalu
+  mengembalikan `qr_string` (payload QRIS untuk dirender di aplikasi),
+  `payment_url`, `expires_at`, `unique_code`, dan `amount`. `qr_url` KiPay
+  tidak dikirim ke client karena mengandung API key.
+- QR berlaku sesuai `expires_at` dari KiPay (biasanya 2 jam di sandbox dan
+  15 menit di production).
+- `POST /wallet/topups/:id/check` membaca status transaksi langsung ke KiPay.
+  Saldo masuk sebesar `amount` (nominal + kode unik) setelah status `paid`.
+- `POST /wallet/topups/:id/simulate` menandai transaksi sandbox sebagai lunas
+  lewat endpoint simulasi KiPay, lalu saldo langsung ditambahkan. Cocok untuk
+  testing tanpa pembayaran nyata.
+- Checkout laundry dan produk memakai **saldo**, bukan QRIS langsung.
+- Mode transaksi mengikuti project/API key KiPay. Untuk pembayaran nyata,
+  gunakan API key project **production** (prefix transaksi `QRIS`), bukan
+  API key sandbox (prefix `SBX`).
 
 Isi `.env`:
 
 ```env
-DANA_ENV=sandbox
-DANA_CLIENT_ID=...
-DANA_PARTNER_ID=...
-DANA_CHANNEL_ID=95221
-DANA_MERCHANT_ID=...
-DANA_STORE_ID=
-DANA_ORIGIN=https://nyucik-backend.vercel.app
-DANA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-
-# Alternatif tanpa API DANA: payload QRIS statis milik sendiri
-QRIS_STATIC_PAYLOAD=00020101021126...
+KIPAY_BASE_URL=https://api.kipay.biz.id
+KIPAY_API_KEY=...
+KIPAY_PAYMENT_URL=https://api.kipay.biz.id/pay/...
 ```
-
-`DANA_ORIGIN` harus sama dengan origin yang didaftarkan saat onboarding partner.
-Set `DANA_ENV=production` untuk uang nyata.
 
 ## Deploy
 

@@ -12,7 +12,7 @@ import {
   updateDryingMachine,
   updateDryingStatus,
   deleteDryingMachine,
-} from "../controllers/machine";
+} from "../controllers/machine.controller";
 import { authenticate, requireAdmin } from "../middlewares/auth.middleware";
 import { upload } from "../middlewares/upload.middleware";
 
