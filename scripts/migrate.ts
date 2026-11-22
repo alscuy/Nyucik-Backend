@@ -24,7 +24,7 @@ const run = async () => {
 
   try {
     await conn.query(sql);
-    console.log("✅ Migrasi selesai: database nyucik_db & semua tabel berhasil dibuat");
+    console.log("✅ Migrasi selesai: semua tabel berhasil dibuat/diperbarui");
   } catch (err) {
     console.error("❌ Migrasi gagal:", err);
     process.exitCode = 1;
