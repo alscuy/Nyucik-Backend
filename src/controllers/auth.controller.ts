@@ -114,7 +114,7 @@ export const resendOtp = async (req: Request, res: Response) => {
     if (req.body?.otp) {
       return fail(
         res,
-        "Endpoint ini hanya untuk kirim ulang OTP. Verifikasi kode pakai POST /api/v1/auth/verify-otp",
+        "Endpoint ini hanya untuk kirim ulang OTP. Verifikasi kode lewat halaman verifikasi.",
         400
       );
     }
