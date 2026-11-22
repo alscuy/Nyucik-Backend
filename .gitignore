@@ -34,3 +34,5 @@ ca.pem
 
 # Dokumentasi lokal (ga ikut commit)
 docs/
+
+postman/
