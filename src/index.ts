@@ -17,6 +17,7 @@ import productRoute from "./routes/product.route";
 import announcementRoute from "./routes/announcement.route";
 import employeeRoute from "./routes/employee.route";
 import adminRoute from "./routes/admin.route";
+import storeRoute from "./routes/store.route";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,6 +50,7 @@ app.use("/api/v1/products", productRoute);
 app.use("/api/v1/announcements", announcementRoute);
 app.use("/api/v1/employees", employeeRoute);
 app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/store", storeRoute);
 
 app.use(notFoundHandler);
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => errorHandler(err, _req, res, _next));
