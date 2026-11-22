@@ -12,6 +12,7 @@ import {
   nowWibTime,
   refundBooking,
 } from "../services/booking.service";
+import { storeIsOpen } from "../services/store.service";
 
 const SELECT_BOOKING = `SELECT b.*, w.code AS washing_code, d.code AS drying_code
   FROM bookings b
@@ -21,6 +22,11 @@ const SELECT_BOOKING = `SELECT b.*, w.code AS washing_code, d.code AS drying_cod
 export const createBooking = async (req: AuthRequest, res: Response) => {
   try {
     const data = createBookingSchema.parse(req.body);
+
+    if (!(await storeIsOpen())) {
+      return fail(res, "Toko sedang tutup. Laundry belum bisa dipesan sekarang.", 409);
+    }
+
     const { machineColumn, table } = machineInfo(data);
     const machine: any = await queryOne(`SELECT * FROM ${table} WHERE id = ?`, [data.machine_id]);
 
@@ -76,7 +82,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     return success(
       res,
       { ...booking, machine_code: machine.code, duration_minutes: DURATION_MINUTES },
-      `Laundry berhasil dibuat. Bayar pakai saldo: POST /api/v1/bookings/${booking.id}/pay`,
+      `Laundry berhasil dibuat. Silakan bayar pakai saldo.`,
       201
     );
   } catch (err: any) {
