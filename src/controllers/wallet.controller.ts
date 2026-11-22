@@ -278,3 +278,38 @@ export const simulateTopUp = async (req: AuthRequest, res: Response) => {
     return fail(res, `Gagal simulasi pembayaran: ${err?.message || "coba lagi"}`, 502);
   }
 };
+
+/**
+ * Batalkan top up yang masih menunggu pembayaran.
+ * Saldo tidak berubah karena transaksi belum pernah masuk.
+ */
+export const cancelTopUp = async (req: AuthRequest, res: Response) => {
+  const topUp: any = await queryOne(
+    "SELECT * FROM top_ups WHERE id = ? AND user_id = ?",
+    [req.params.id, req.user!.id]
+  );
+  if (!topUp) return fail(res, "Top up tidak ditemukan", 404);
+
+  if (topUp.status === "PAID") {
+    return fail(res, "Top up ini sudah dibayar, tidak bisa dibatalkan", 409);
+  }
+
+  if (topUp.status !== "PENDING") {
+    return success(
+      res,
+      { top_up_id: topUp.id, status: topUp.status },
+      "Top up ini sudah tidak aktif"
+    );
+  }
+
+  await pool.query(
+    "UPDATE top_ups SET status = 'CANCELLED' WHERE id = ? AND status = 'PENDING'",
+    [topUp.id]
+  );
+
+  return success(
+    res,
+    { top_up_id: topUp.id, status: "CANCELLED" },
+    "Top up dibatalkan"
+  );
+};
