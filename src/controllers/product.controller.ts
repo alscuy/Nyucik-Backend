@@ -5,6 +5,7 @@ import { badRequest, notFound } from "../utils/http-error";
 import { uploadImage, FOLDERS } from "../utils/cloudinary.util";
 import { productSchema, purchaseSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
+import { storeIsOpen } from "../services/store.service";
 
 export const listProducts = async (_req: AuthRequest, res: Response) => {
   const rows = await query(
@@ -27,6 +28,10 @@ export const getProduct = async (req: AuthRequest, res: Response) => {
 export const purchaseProduct = async (req: AuthRequest, res: Response) => {
   try {
     const data = purchaseSchema.parse(req.body);
+
+    if (!(await storeIsOpen())) {
+      return fail(res, "Toko sedang tutup. Pembelian belum bisa dilakukan sekarang.", 409);
+    }
 
     const order = await withTransaction(async (conn) => {
 
