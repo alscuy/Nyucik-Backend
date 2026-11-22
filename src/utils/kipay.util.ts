@@ -136,7 +136,7 @@ export const getKipayTransaction = async (
  */
 export const simulateKipayTransaction = async (
   trxId: string,
-  provider = "shopeepay"
+  provider = "nyucik"
 ): Promise<KipayTransaction> => {
   const data = await request<any>(
     `/transactions/${encodeURIComponent(trxId)}/simulate`,
