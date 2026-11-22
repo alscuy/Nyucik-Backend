@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS top_ups (
   user_id       INT UNSIGNED NOT NULL,
   reference     VARCHAR(40) NOT NULL UNIQUE,
   amount        DECIMAL(14,2) NOT NULL,
-  status        ENUM('PENDING','PAID','EXPIRED','FAILED') NOT NULL DEFAULT 'PENDING',
+  status        ENUM('PENDING','PAID','EXPIRED','FAILED','CANCELLED') NOT NULL DEFAULT 'PENDING',
   qr_string     TEXT NULL,
   provider      VARCHAR(20) NOT NULL DEFAULT 'STATIC',
   provider_ref  VARCHAR(100) NULL,
@@ -168,3 +168,16 @@ CREATE TABLE IF NOT EXISTS top_ups (
   INDEX idx_topups_user (user_id),
   INDEX idx_topups_status (status)
 );
+
+ALTER TABLE top_ups
+  MODIFY status ENUM('PENDING','PAID','EXPIRED','FAILED','CANCELLED') NOT NULL DEFAULT 'PENDING';
+
+-- ---------------- STORE SETTINGS ----------------
+CREATE TABLE IF NOT EXISTS store_settings (
+  id         TINYINT UNSIGNED PRIMARY KEY,
+  is_open    TINYINT(1) NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO store_settings (id, is_open) VALUES (1, 1)
+  ON DUPLICATE KEY UPDATE id = id;
