@@ -16,4 +16,5 @@ export {
   announcementSchemaBase,
   announcementSchema,
   employeeSchema,
+  expenseSchema,
 } from "./content.validator";

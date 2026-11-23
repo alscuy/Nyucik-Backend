@@ -1,6 +1,8 @@
 import { Response } from "express";
-import { query, queryOne, todayWib } from "../config/database";
+import { pool, query, queryOne, todayWib } from "../config/database";
 import { success, fail } from "../utils/response";
+import { notFound } from "../utils/http-error";
+import { expenseSchema } from "../validators";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
 export const dashboard = async (_req: AuthRequest, res: Response) => {
@@ -96,10 +98,14 @@ export const getUserDetail = async (req: AuthRequest, res: Response) => {
   return success(res, { user, bookings, topUps: topUpRows, transactions }, "Detail user berhasil diambil");
 };
 
-/// Daftar pemasukan (laundry + produk) untuk halaman detail omzet.
+const toNumber = (value: unknown): number => Number(value ?? 0);
+
+const dateKey = (value: unknown): string => String(value ?? "").slice(0, 10);
+
+/// Daftar pemasukan (laundry + produk), pengeluaran, dan rekap per tanggal.
 export const revenueDetail = async (_req: AuthRequest, res: Response) => {
   const bookings = await query(
-    `SELECT b.id, b.machine_type, b.total_price, b.status, b.created_at,
+    `SELECT b.id, b.machine_type, b.total_price, b.status, b.created_at, b.paid_at,
             u.full_name, w.code AS washing_code, d.code AS drying_code
      FROM bookings b
      JOIN users u ON u.id = b.user_id
@@ -109,8 +115,9 @@ export const revenueDetail = async (_req: AuthRequest, res: Response) => {
      ORDER BY b.created_at DESC`
   );
   bookings.forEach((booking: any) => {
-    booking.total_price = Number(booking.total_price);
+    booking.total_price = toNumber(booking.total_price);
     booking.machine_code = booking.washing_code ?? booking.drying_code ?? "-";
+    booking.income_date = dateKey(booking.paid_at ?? booking.created_at);
   });
 
   const products = await query(
@@ -122,8 +129,176 @@ export const revenueDetail = async (_req: AuthRequest, res: Response) => {
      ORDER BY po.created_at DESC`
   );
   products.forEach((product: any) => {
-    product.total_price = Number(product.total_price);
+    product.total_price = toNumber(product.total_price);
   });
 
-  return success(res, { bookings, products }, "Detail omzet berhasil diambil");
+  const expenses = await query(
+    `SELECT id, title, amount, expense_date, note, created_at, updated_at
+     FROM expenses ORDER BY expense_date DESC, id DESC`
+  );
+  expenses.forEach((expense: any) => {
+    expense.amount = toNumber(expense.amount);
+  });
+
+  const incomeMap = new Map<
+    string,
+    { date: string; booking: number; product: number; total: number }
+  >();
+  const addIncome = (
+    value: unknown,
+    field: "booking" | "product",
+    amount: number
+  ) => {
+    const date = dateKey(value);
+    if (!date) return;
+    const current =
+      incomeMap.get(date) ?? { date, booking: 0, product: 0, total: 0 };
+    current[field] += amount;
+    current.total += amount;
+    incomeMap.set(date, current);
+  };
+  bookings.forEach((booking: any) =>
+    addIncome(booking.income_date, "booking", booking.total_price)
+  );
+  products.forEach((product: any) =>
+    addIncome(product.created_at, "product", product.total_price)
+  );
+  const incomeByDate = Array.from(incomeMap.values()).sort((a, b) =>
+    b.date.localeCompare(a.date)
+  );
+
+  const expenseMap = new Map<string, number>();
+  expenses.forEach((expense: any) => {
+    const date = dateKey(expense.expense_date ?? expense.created_at);
+    if (!date) return;
+    expenseMap.set(date, (expenseMap.get(date) ?? 0) + expense.amount);
+  });
+  const expenseByDate = Array.from(expenseMap.entries())
+    .map(([date, total]) => ({ date, total }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const incomeBooking = bookings.reduce(
+    (sum: number, booking: any) => sum + booking.total_price,
+    0
+  );
+  const incomeProduct = products.reduce(
+    (sum: number, product: any) => sum + product.total_price,
+    0
+  );
+  const incomeTotal = incomeBooking + incomeProduct;
+  const expenseTotal = expenses.reduce(
+    (sum: number, expense: any) => sum + expense.amount,
+    0
+  );
+  const net = incomeTotal - expenseTotal;
+
+  return success(
+    res,
+    {
+      bookings,
+      products,
+      expenses,
+      income_by_date: incomeByDate,
+      expense_by_date: expenseByDate,
+      summary: {
+        income_booking: incomeBooking,
+        income_product: incomeProduct,
+        income_total: incomeTotal,
+        expense_total: expenseTotal,
+        net,
+        profit: Math.max(0, net),
+        loss: Math.max(0, -net),
+      },
+    },
+    "Detail omzet berhasil diambil"
+  );
+};
+
+export const listExpenses = async (_req: AuthRequest, res: Response) => {
+  const rows = await query(
+    `SELECT id, title, amount, expense_date, note, created_at, updated_at
+     FROM expenses ORDER BY expense_date DESC, id DESC`
+  );
+  rows.forEach((row: any) => {
+    row.amount = toNumber(row.amount);
+  });
+  return success(res, rows, "Data pengeluaran berhasil diambil");
+};
+
+export const createExpense = async (req: AuthRequest, res: Response) => {
+  try {
+    const data = expenseSchema.parse(req.body);
+    const result: any = await pool.query(
+      `INSERT INTO expenses (title, amount, expense_date, note) VALUES (?, ?, ?, ?)`,
+      [data.title, data.amount, data.expense_date, data.note ?? null]
+    );
+    const expense: any = await queryOne(
+      "SELECT * FROM expenses WHERE id = ?",
+      [result[0].insertId]
+    );
+    if (expense) expense.amount = toNumber(expense.amount);
+    return success(res, expense, "Pengeluaran berhasil ditambahkan", 201);
+  } catch (err: any) {
+    if (err.name === "ZodError")
+      return fail(
+        res,
+        err.errors.map((issue: any) => issue.message).join(", "),
+        400
+      );
+    console.error(err);
+    return fail(res);
+  }
+};
+
+export const updateExpense = async (req: AuthRequest, res: Response) => {
+  try {
+    const existing: any = await queryOne(
+      "SELECT id FROM expenses WHERE id = ?",
+      [req.params.id]
+    );
+    if (!existing) return notFound("Pengeluaran tidak ditemukan");
+
+    const data = expenseSchema.partial().parse(req.body);
+
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    for (const [key, value] of Object.entries(data)) {
+      fields.push(`${key} = ?`);
+      values.push(value);
+    }
+    if (fields.length === 0)
+      return fail(res, "Tidak ada data yang diubah", 400);
+
+    values.push(req.params.id);
+    await pool.query(
+      `UPDATE expenses SET ${fields.join(", ")} WHERE id = ?`,
+      values
+    );
+
+    const updated: any = await queryOne(
+      "SELECT * FROM expenses WHERE id = ?",
+      [req.params.id]
+    );
+    if (updated) updated.amount = toNumber(updated.amount);
+    return success(res, updated, "Pengeluaran berhasil diperbarui");
+  } catch (err: any) {
+    if (err.name === "ZodError")
+      return fail(
+        res,
+        err.errors.map((issue: any) => issue.message).join(", "),
+        400
+      );
+    console.error(err);
+    return fail(res);
+  }
+};
+
+export const deleteExpense = async (req: AuthRequest, res: Response) => {
+  const existing: any = await queryOne(
+    "SELECT id FROM expenses WHERE id = ?",
+    [req.params.id]
+  );
+  if (!existing) return notFound("Pengeluaran tidak ditemukan");
+  await pool.query("DELETE FROM expenses WHERE id = ?", [req.params.id]);
+  return success(res, null, "Pengeluaran berhasil dihapus");
 };

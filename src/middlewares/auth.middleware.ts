@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, response } from "express";
 import { verifyToken } from "../utils/jwt.util";
 import { fail } from "../utils/response";
 
@@ -8,19 +8,19 @@ export interface AuthRequest extends Request {
 
 export const authenticate = (
   req: AuthRequest,
-  res: Response,
+  response: Response,
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return fail(res, "Token tidak ditemukan atau format salah", 401);
+    return fail(response, "Token tidak ditemukan atau format salah", 401);
   }
   try {
     const token = authHeader.split(" ")[1];
     req.user = verifyToken(token);
     next();
   } catch {
-    return fail(res, "Token tidak valid atau expired", 401);
+    return fail(response, "Token tidak valid atau expired", 401);
   }
 };
 
