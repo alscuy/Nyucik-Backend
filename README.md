@@ -44,8 +44,8 @@ Base URL: `http://localhost:3000/api/v1`
 | Produk | `GET /products`, `POST /products/orders`, `GET /products/orders/my`, `POST /products/orders/:id/complete` |
 | Pengumuman | `GET /announcements`, `GET /announcements/admin/all`, `POST/PATCH/DELETE /announcements` |
 | Petugas | `GET /employees`, `POST/PATCH/DELETE /employees` |
-| Omzet | `GET /admin/revenue` (rekap pemasukan per tanggal + untung/rugi) |
-| Pengeluaran | `GET/POST /admin/expenses`, `PATCH/DELETE /admin/expenses/:id` |
+| Omzet | `GET /admin/revenue?start_date=&end_date=` (rekap pemasukan per tanggal + untung/rugi) |
+| Pengeluaran | `GET/POST /admin/expenses`, `PATCH/DELETE /admin/expenses/:id` (bisa difilter tanggal) |
 | Admin | `GET /admin/dashboard`, `GET /admin/users`, `GET /admin/users/:id` |
 
 ## Top Up QRIS (KiPay)

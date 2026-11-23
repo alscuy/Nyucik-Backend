@@ -102,8 +102,48 @@ const toNumber = (value: unknown): number => Number(value ?? 0);
 
 const dateKey = (value: unknown): string => String(value ?? "").slice(0, 10);
 
+type DateRange = { start?: string; end?: string; error?: string };
+
+/// Baca filter ?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD (opsional).
+const readDateRange = (req: AuthRequest): DateRange => {
+  const pattern = /^\d{4}-\d{2}-\d{2}$/;
+  const start =
+    typeof req.query.start_date === "string" && req.query.start_date
+      ? req.query.start_date
+      : undefined;
+  const end =
+    typeof req.query.end_date === "string" && req.query.end_date
+      ? req.query.end_date
+      : undefined;
+
+  if (start && !pattern.test(start))
+    return { error: "start_date harus format YYYY-MM-DD" };
+  if (end && !pattern.test(end))
+    return { error: "end_date harus format YYYY-MM-DD" };
+  if (start && end && start > end)
+    return { error: "start_date harus sama atau sebelum end_date" };
+
+  return { start, end };
+};
+
 /// Daftar pemasukan (laundry + produk), pengeluaran, dan rekap per tanggal.
-export const revenueDetail = async (_req: AuthRequest, res: Response) => {
+export const revenueDetail = async (req: AuthRequest, res: Response) => {
+  const range = readDateRange(req);
+  if (range.error) return fail(res, range.error, 400);
+
+  const bookingWhere = [
+    "b.status IN ('CONFIRMED','IN_PROGRESS','COMPLETED')",
+  ];
+  const bookingParams: unknown[] = [];
+  if (range.start) {
+    bookingWhere.push("DATE(COALESCE(b.paid_at, b.created_at)) >= ?");
+    bookingParams.push(range.start);
+  }
+  if (range.end) {
+    bookingWhere.push("DATE(COALESCE(b.paid_at, b.created_at)) <= ?");
+    bookingParams.push(range.end);
+  }
+
   const bookings = await query(
     `SELECT b.id, b.machine_type, b.total_price, b.status, b.created_at, b.paid_at,
             u.full_name, w.code AS washing_code, d.code AS drying_code
@@ -111,8 +151,9 @@ export const revenueDetail = async (_req: AuthRequest, res: Response) => {
      JOIN users u ON u.id = b.user_id
      LEFT JOIN washing_machines w ON w.id = b.washing_machine_id
      LEFT JOIN drying_machines d ON d.id = b.drying_machine_id
-     WHERE b.status IN ('CONFIRMED','IN_PROGRESS','COMPLETED')
-     ORDER BY b.created_at DESC`
+     WHERE ${bookingWhere.join(" AND ")}
+     ORDER BY b.created_at DESC`,
+    bookingParams
   );
   bookings.forEach((booking: any) => {
     booking.total_price = toNumber(booking.total_price);
@@ -120,21 +161,48 @@ export const revenueDetail = async (_req: AuthRequest, res: Response) => {
     booking.income_date = dateKey(booking.paid_at ?? booking.created_at);
   });
 
+  const productWhere: string[] = [];
+  const productParams: unknown[] = [];
+  if (range.start) {
+    productWhere.push("DATE(po.created_at) >= ?");
+    productParams.push(range.start);
+  }
+  if (range.end) {
+    productWhere.push("DATE(po.created_at) <= ?");
+    productParams.push(range.end);
+  }
+
   const products = await query(
     `SELECT po.id, p.name AS product_name, po.quantity, po.total_price, po.status, po.created_at,
             u.full_name
      FROM product_orders po
      JOIN products p ON p.id = po.product_id
      JOIN users u ON u.id = po.user_id
-     ORDER BY po.created_at DESC`
+     ${productWhere.length ? `WHERE ${productWhere.join(" AND ")}` : ""}
+     ORDER BY po.created_at DESC`,
+    productParams
   );
   products.forEach((product: any) => {
     product.total_price = toNumber(product.total_price);
   });
 
+  const expenseWhere: string[] = [];
+  const expenseParams: unknown[] = [];
+  if (range.start) {
+    expenseWhere.push("expense_date >= ?");
+    expenseParams.push(range.start);
+  }
+  if (range.end) {
+    expenseWhere.push("expense_date <= ?");
+    expenseParams.push(range.end);
+  }
+
   const expenses = await query(
     `SELECT id, title, amount, expense_date, note, created_at, updated_at
-     FROM expenses ORDER BY expense_date DESC, id DESC`
+     FROM expenses
+     ${expenseWhere.length ? `WHERE ${expenseWhere.join(" AND ")}` : ""}
+     ORDER BY expense_date DESC, id DESC`,
+    expenseParams
   );
   expenses.forEach((expense: any) => {
     expense.amount = toNumber(expense.amount);
@@ -200,6 +268,10 @@ export const revenueDetail = async (_req: AuthRequest, res: Response) => {
       expenses,
       income_by_date: incomeByDate,
       expense_by_date: expenseByDate,
+      range: {
+        start_date: range.start ?? null,
+        end_date: range.end ?? null,
+      },
       summary: {
         income_booking: incomeBooking,
         income_product: incomeProduct,
@@ -214,10 +286,27 @@ export const revenueDetail = async (_req: AuthRequest, res: Response) => {
   );
 };
 
-export const listExpenses = async (_req: AuthRequest, res: Response) => {
+export const listExpenses = async (req: AuthRequest, res: Response) => {
+  const range = readDateRange(req);
+  if (range.error) return fail(res, range.error, 400);
+
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (range.start) {
+    where.push("expense_date >= ?");
+    params.push(range.start);
+  }
+  if (range.end) {
+    where.push("expense_date <= ?");
+    params.push(range.end);
+  }
+
   const rows = await query(
     `SELECT id, title, amount, expense_date, note, created_at, updated_at
-     FROM expenses ORDER BY expense_date DESC, id DESC`
+     FROM expenses
+     ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+     ORDER BY expense_date DESC, id DESC`,
+    params
   );
   rows.forEach((row: any) => {
     row.amount = toNumber(row.amount);
