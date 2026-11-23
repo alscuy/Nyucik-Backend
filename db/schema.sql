@@ -132,6 +132,18 @@ CREATE TABLE IF NOT EXISTS employees (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- ---------------- EXPENSES (PENGELUARAN) ----------------
+CREATE TABLE IF NOT EXISTS expenses (
+  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title        VARCHAR(150) NOT NULL,
+  amount       DECIMAL(12,2) NOT NULL,
+  expense_date DATE NOT NULL,
+  note         TEXT NULL,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_expenses_date (expense_date)
+);
+
 -- ---------------- WALLET TRANSACTIONS ----------------
 CREATE TABLE IF NOT EXISTS wallet_transactions (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

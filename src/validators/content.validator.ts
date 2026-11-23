@@ -27,3 +27,14 @@ export const employeeSchema = z.object({
   phone: z.string().optional(),
   is_ready: booleanField.optional().default(true),
 });
+
+export const expenseSchema = z.object({
+  title: z.string().min(3, "Judul pengeluaran minimal 3 karakter"),
+  amount: z.coerce
+    .number()
+    .positive("Nominal pengeluaran harus lebih dari 0"),
+  expense_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal harus format YYYY-MM-DD"),
+  note: z.string().optional(),
+});
